@@ -20,7 +20,7 @@ Vagrant.configure("2") do |config|
 		sdw1_config.vm.hostname = "sdw1"
 		sdw1_config.vm.provision :shell, :path => "install_applications.sh"
 		sdw1_config.vm.provision :shell, :path => "setup_host.sh"
-		sdw1_config.vm.provision :shell, :path => "install_lab_data_on_segment_1.sh"
+		sdw1_config.vm.provision :shell, :path => "install_lab_data_on_sdw1.sh"
 		sdw1_config.vm.provision :shell, :path => "unmount_vagrant.sh"
 	end
   
@@ -43,8 +43,8 @@ Vagrant.configure("2") do |config|
 		mdw_config.vm.provision :shell, :path => "setup_host.sh"
 		mdw_config.vm.provision :shell, :path => "setup_master.sh"
 		mdw_config.vm.provision :shell, :path => "change_password.sh"
-		mdw_config.vm.provision :shell, :path => "install_lab_data_on_master.sh"
-		mdw_config.vm.provision :shell, :path => "install_gpdb_and_gpcc_on_master.sh"
+		mdw_config.vm.provision :shell, :path => "install_lab_data_on_mdw.sh"
+		mdw_config.vm.provision :shell, :path => "install_gpdb_and_gpcc_on_mdw.sh"
 		mdw_config.vm.provision :shell, :path => "install_gpdb_on_segments.sh"
 		mdw_config.vm.provision :shell, :path => "run_system_verification_tests.sh"
 		mdw_config.vm.provision :shell, :path => "initialize_gpdb.sh"
