@@ -1,0 +1,918 @@
+= 17. Physical Design Decisions
+
+
+
+|====
+|   
+
+**Purpose:** | In this lab, you create table objects based on business requirements provided in the lab. The choice of data types, constraints, distribution keys, and partitioning is up to you.
+
+The logical data model to support the business model is provided below.
+| 
+| **Tasks:** | Students perform the following tasks:
+
+·       Create the Store dimension
+
+·       Create the Country dimension
+
+·       Create the Customer dimension
+
+·       Create the Transaction fact table
+
+·       Load dimension and fact data
+| 
+| **References:** | Module 7 – Data Modeling and Design
+
+·       Lesson: Physical Design Decisions
+|====
+
+
+
+<v:shape id="_x0000_i1107" type="#_x0000_t75" alt="Description: Lab17_Dimensions_and_Fact_Tables.png" style="width: 405pt; height: 441pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image431.png" o:title="Lab17_Dimensions_and_Fact_Tables.png"></v:imagedata></v:shape>
+**  
+**
+
+|====
+| **Step** | **Action**
+| 1.      | The business requirements for the Store dimension are as follows:
+
+1.     Each store is given a numeric identifier. This identifier is created in the source system (OLTP) and passed to the data warehouse. The Store id is unique for each store and may not be null.
+
+2.     All address attributes are required.
+
+3.     The phone number is stored as (XXX)XXX-XXXX formatted character string.
+
+4.     The store name must allow for upper and lower case data and may contain single or double quotes in the name. The store name may not be null.
+
+5.     The “Has” columns are passed as either 0 (false) or 1 (true) to the data warehouse. The default value for these columns in the OLTP system is 0.
+
+6.     The country code is three characters (e.g., USA, CAN). Currently the business only operates in the United States and Canada.
+
+7.     There are currently around thirty five stores in the US and Canada.
+
+Based on these requirements, implement the Store dimension.
+| 2.      | Determine the table name for the Store entity?   
+_________________________________________________________
+| 3.      | Determine the column name, data type, and any constraints for each attribute of the Store entity.
+<table class="LightList-Accent11" border="1" cellspacing="0" cellpadding="0" style="border-collapse: collapse; border: none;"><tbody><tr style="height: 0.2in;"><td width="131" style="width: 131.3pt; border-style: solid none none solid; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; height: 0.2in; background: rgb(79, 129, 189);">
+**Attribute Name**
+</td><td width="95" style="width: 94.5pt; border-style: solid solid none; border-top-color: rgb(79, 129, 189); border-right-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-right-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.2in; background: rgb(79, 129, 189);">
+**Column Name**
+</td><td width="81" style="width: 81pt; border-style: solid none none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; padding: 0in 5.4pt; height: 0.2in; background: rgb(79, 129, 189);">
+**Data Type**
+</td><td width="99" style="width: 99pt; border-style: solid solid none; border-top-color: rgb(79, 129, 189); border-right-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-right-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.2in; background: rgb(79, 129, 189);">
+**Constraint**
+</td></tr><tr style="height: 0.3in;"><td width="131" style="width: 131.3pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Store ID**
+</td><td width="95" style="width: 94.5pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="81" style="width: 81pt; border-style: solid none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="99" style="width: 99pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="131" style="width: 131.3pt; border-style: none none none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Store Name**
+</td><td width="95" style="width: 94.5pt; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="81" style="width: 81pt; border: none; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="99" style="width: 99pt; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="131" style="width: 131.3pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Address**
+</td><td width="95" style="width: 94.5pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="81" style="width: 81pt; border-style: solid none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="99" style="width: 99pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="131" style="width: 131.3pt; border-style: none none none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**City**
+</td><td width="95" style="width: 94.5pt; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="81" style="width: 81pt; border: none; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="99" style="width: 99pt; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="131" style="width: 131.3pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**State**
+</td><td width="95" style="width: 94.5pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="81" style="width: 81pt; border-style: solid none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="99" style="width: 99pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="131" style="width: 131.3pt; border-style: none none none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Zip Code**
+</td><td width="95" style="width: 94.5pt; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="81" style="width: 81pt; border: none; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="99" style="width: 99pt; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="131" style="width: 131.3pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Zip Code Plus Four**
+</td><td width="95" style="width: 94.5pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="81" style="width: 81pt; border-style: solid none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="99" style="width: 99pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="131" style="width: 131.3pt; border-style: none none none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Phone**
+</td><td width="95" style="width: 94.5pt; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="81" style="width: 81pt; border: none; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="99" style="width: 99pt; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="131" style="width: 131.3pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Country Code**
+</td><td width="95" style="width: 94.5pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="81" style="width: 81pt; border-style: solid none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="99" style="width: 99pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="131" style="width: 131.3pt; border-style: none none none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Has Pharmacy**
+</td><td width="95" style="width: 94.5pt; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="81" style="width: 81pt; border: none; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="99" style="width: 99pt; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="131" style="width: 131.3pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Has Grocery**
+</td><td width="95" style="width: 94.5pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="81" style="width: 81pt; border-style: solid none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="99" style="width: 99pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="131" style="width: 131.3pt; border-style: none none none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Has Deli**
+</td><td width="95" style="width: 94.5pt; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="81" style="width: 81pt; border: none; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="99" style="width: 99pt; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="131" style="width: 131.3pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Has Butcher**
+</td><td width="95" style="width: 94.5pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="81" style="width: 81pt; border-style: solid none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="99" style="width: 99pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="131" style="width: 131.3pt; border-style: none none solid solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Has Bakery**
+</td><td width="95" style="width: 94.5pt; border-style: none solid solid; border-right-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-right-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="81" style="width: 81pt; border-style: none none solid; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="99" style="width: 99pt; border-style: none solid solid; border-right-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-right-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr></tbody></table>
+ | **Attribute Name** | **Column Name** | **Data Type** | **Constraint** | **Store ID** |  |  |  | **Store Name** |  |  |  | **Address** |  |  |  | **City** |  |  |  | **State** |  |  |  | **Zip Code** |  |  |  | **Zip Code Plus Four** |  |  |  | **Phone** |  |  |  | **Country Code** |  |  |  | **Has Pharmacy** |  |  |  | **Has Grocery** |  |  |  | **Has Deli** |  |  |  | **Has Butcher** |  |  |  | **Has Bakery** |  |  | 
+| **Attribute Name** | **Column Name** | **Data Type** | **Constraint**
+| **Store ID** |  |  | 
+| **Store Name** |  |  | 
+| **Address** |  |  | 
+| **City** |  |  | 
+| **State** |  |  | 
+| **Zip Code** |  |  | 
+| **Zip Code Plus Four** |  |  | 
+| **Phone** |  |  | 
+| **Country Code** |  |  | 
+| **Has Pharmacy** |  |  | 
+| **Has Grocery** |  |  | 
+| **Has Deli** |  |  | 
+| **Has Butcher** |  |  | 
+| **Has Bakery** |  |  | 
+| 4.      | What will be the DISTRIBUTION KEY? Is it UNIQUE?  
+_________________________________________________________
+| 5.      | Create an SQL file with the o statement.
+
+Be sure to include any column and table constraints.
+
+There is an example (non-optimized) file called create_store.sql in the/home/gp/sql/load_files /adv_sql_files that you can use as a guide.
+
+[gpadmin@mdw ~]$ **cd /home/gp/sql/load_files/adv_sql_files**
+
+[gpadmin@mdw adv_sql_files]$ **vi create_store.sql**
+
+You will be accessing the directory /home/gp/sql/load_files directory throughout this lab. To save some time, create an environment variable that points to that directory:  
+**export LF=/home/gp/sql/load_files**
+| 6.      | Execute the script as gpadmin by starting a **psql** session and passing in the file name with the **-f**option. Include the datamart database as part of the psql command:
+
+[gpadmin@mdw adv_sql_files]$ **psql datamart -f create_store.sql**
+
+<v:shape id="Picture_x0020_17" o:spid="_x0000_i1106" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f6fb436.PNG" style="width: 458pt; height: 101pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image432.png" o:title="SNAGHTML1f6fb436.PNG"></v:imagedata></v:shape>
+
+You should see the words CREATE TABLE immediately under the Linux prompt if there were no errors.
+| 7.      | Verify the table has been created:
+
+[gpadmin@mdw adv_sql_files]$ **psql datamart -c "\dt dimensions.store"**
+
+<v:shape id="Picture_x0020_18" o:spid="_x0000_i1105" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f7020fc.PNG" style="width: 458pt; height: 117pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image433.png" o:title="SNAGHTML1f7020fc.PNG"></v:imagedata></v:shape>
+
+One row with the table name should be displayed.
+|====
+**  
+**
+
+|====
+| **Step** | **Action**
+| 1.      | The business requirements for the Country dimension are as follows:
+
+1.     The country code is three characters, such as USA or CAN. Currently, the business only operates in the United States and Canada. This column cannot be NULL.
+
+2.     The country name is a text column.
+
+Based on these requirements, implement the Country dimension.
+| 2.      | Determine the table name for the Country entity from the LDM.  
+______________________________________________________________
+| 3.      | Determine the column name, data type and any constraints for each attribute of the Store entity.
+<table class="LightList-Accent11" border="1" cellspacing="0" cellpadding="0" style="border-collapse: collapse; border: none;"><tbody><tr style="height: 0.3in;"><td width="95" style="width: 95.3pt; border-style: solid none none solid; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in; background: rgb(79, 129, 189);">
+**Attribute Name**
+</td><td width="117" style="width: 117pt; border-style: solid solid none; border-top-color: rgb(79, 129, 189); border-right-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-right-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in; background: rgb(79, 129, 189);">
+**Column Name**
+</td><td width="90" style="width: 1.25in; border-style: solid none none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; padding: 0in 5.4pt; height: 0.3in; background: rgb(79, 129, 189);">
+**Data Type**
+</td><td width="113" style="width: 112.5pt; border-style: solid solid none; border-top-color: rgb(79, 129, 189); border-right-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-right-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in; background: rgb(79, 129, 189);">
+**Constraint**
+</td></tr><tr><td width="95" style="width: 95.3pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt;">
+**Country Code**
+</td><td width="117" style="width: 117pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt;">
+
+</td><td width="90" valign="top" style="width: 1.25in; border-style: solid none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt;">
+
+</td><td width="113" valign="top" style="width: 112.5pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt;">
+
+</td></tr><tr><td width="95" style="width: 95.3pt; border-style: none none solid solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt;">
+**Country Name**
+</td><td width="117" style="width: 117pt; border-style: none solid solid; border-right-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-right-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt;">
+
+</td><td width="90" valign="top" style="width: 1.25in; border-style: none none solid; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt;">
+
+</td><td width="113" valign="top" style="width: 112.5pt; border-style: none solid solid; border-right-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-right-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt;">
+
+</td></tr></tbody></table>
+ | **Attribute Name** | **Column Name** | **Data Type** | **Constraint** | **Country Code** |  |  |  | **Country Name** |  |  | 
+| **Attribute Name** | **Column Name** | **Data Type** | **Constraint**
+| **Country Code** |  |  | 
+| **Country Name** |  |  | 
+| 4.      | What will be the DISTRIBUTION KEY? Is it UNIQUE?  
+_________________________________________________________
+| 5.      | Create an SQL file with the CREATE TABLE statement.
+
+Be sure to include any column and table constraints.
+
+There is an example (non-optimized) file called create_country.sql in the/home/gp/sql/load_files /adv_sql_files that you can use as a guide.
+
+[gpadmin@mdw adv_sql_files]$ **vi create_country.sql**
+| 6.      | Execute the script as gpadmin by starting a psql session and passing in the file name with the -foption. Include the datamart database as part of the psql command:
+
+[gpadmin@mdw adv_sql_files]$ **psql datamart -f create_country.sql**
+
+<v:shape id="Picture_x0020_20" o:spid="_x0000_i1104" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f70cc29.PNG" style="width: 458pt; height: 96pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image434.png" o:title="SNAGHTML1f70cc29.PNG"></v:imagedata></v:shape>
+
+You should see the words CREATE TABLE immediately under the UNIX prompt if there were no errors.
+| 7.      | Verify the table has been created:
+
+[gpadmin@mdw adv_sql_files]$ **psql datamart \  
+-c "\dt dimensions.country"  
+**<v:shape id="Picture_x0020_21" o:spid="_x0000_i1103" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f711fc4.PNG" style="width: 458pt; height: 126pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image435.png" o:title="SNAGHTML1f711fc4.PNG"></v:imagedata></v:shape>
+
+One row with the table name should be displayed.
+|====
+
+
+
+
+
+|====
+| **Step** | **Action**
+| 1.      | The business requirements for the Customer dimension are as follows:
+
+1.     Each customer is tracked by their phone number as part of their membership rewards program.
+
+2.     There is a default customer with a (999)999-9999 customer id that is used when a transaction occurs for a customer that is not a member of the rewards program.
+
+3.     The customer name may not be NULL.
+
+4.     All address attributes are required.
+
+5.     The phone number is stored as (XXX)XXX-XXXX formatted character string.
+
+6.     The country code is three characters (e.g., USA, CAN). Currently the business only operates in the United States and Canada.
+
+7.     There are approximately 10,000 customers signed up for the rewards program.
+
+8.      The customer id will have to be generated during the ETL process as it is not a part of the OLTP system.
+
+Based on these requirements, implement the Customer dimension.
+| 2.      | Determine the table name for the Customer entity from the LDM.  
+______________________________________________________________
+| 3.      | Determine the column name, data type and any constraints for each attribute of the Store entity.
+<table class="LightList-Accent11" border="1" cellspacing="0" cellpadding="0" style="border-collapse: collapse; border: none;"><tbody><tr style="height: 0.3in;"><td width="100" style="width: 99.8pt; border-style: solid none none solid; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in; background: rgb(79, 129, 189);">
+**Attribute Name**
+</td><td width="108" style="width: 1.5in; border-style: solid solid none; border-top-color: rgb(79, 129, 189); border-right-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-right-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in; background: rgb(79, 129, 189);">
+**Column Name**
+</td><td width="90" style="width: 1.25in; border-style: solid none none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; padding: 0in 5.4pt; height: 0.3in; background: rgb(79, 129, 189);">
+**Data Type**
+</td><td width="108" style="width: 1.5in; border-style: solid solid none; border-top-color: rgb(79, 129, 189); border-right-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-right-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in; background: rgb(79, 129, 189);">
+**Constraint**
+</td></tr><tr style="height: 0.4in;"><td width="100" style="width: 99.8pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+**Customer ID**
+</td><td width="108" style="width: 1.5in; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.4in;">
+
+</td><td width="90" style="width: 1.25in; border-style: solid none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+
+</td><td width="108" style="width: 1.5in; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.4in;">
+
+</td></tr><tr style="height: 0.4in;"><td width="100" style="width: 99.8pt; border-style: none none none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+**Customer Name**
+</td><td width="108" style="width: 1.5in; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+
+</td><td width="90" style="width: 1.25in; border: none; padding: 0in 5.4pt; height: 0.4in;">
+
+</td><td width="108" style="width: 1.5in; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+
+</td></tr><tr style="height: 0.4in;"><td width="100" style="width: 99.8pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+**Address**
+</td><td width="108" style="width: 1.5in; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.4in;">
+
+</td><td width="90" style="width: 1.25in; border-style: solid none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+
+</td><td width="108" style="width: 1.5in; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.4in;">
+
+</td></tr><tr style="height: 0.4in;"><td width="100" style="width: 99.8pt; border-style: none none none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+**City**
+</td><td width="108" style="width: 1.5in; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+
+</td><td width="90" style="width: 1.25in; border: none; padding: 0in 5.4pt; height: 0.4in;">
+
+</td><td width="108" style="width: 1.5in; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+
+</td></tr><tr style="height: 0.4in;"><td width="100" style="width: 99.8pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+**State**
+</td><td width="108" style="width: 1.5in; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.4in;">
+
+</td><td width="90" style="width: 1.25in; border-style: solid none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+
+</td><td width="108" style="width: 1.5in; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.4in;">
+
+</td></tr><tr style="height: 0.4in;"><td width="100" style="width: 99.8pt; border-style: none none none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+**Zip Code**
+</td><td width="108" style="width: 1.5in; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+
+</td><td width="90" style="width: 1.25in; border: none; padding: 0in 5.4pt; height: 0.4in;">
+
+</td><td width="108" style="width: 1.5in; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+
+</td></tr><tr style="height: 0.4in;"><td width="100" style="width: 99.8pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+**Zip Code Plus Four**
+</td><td width="108" style="width: 1.5in; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.4in;">
+
+</td><td width="90" style="width: 1.25in; border-style: solid none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+
+</td><td width="108" style="width: 1.5in; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.4in;">
+
+</td></tr><tr style="height: 0.4in;"><td width="100" style="width: 99.8pt; border-style: none none none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+**Phone**
+</td><td width="108" style="width: 1.5in; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+
+</td><td width="90" style="width: 1.25in; border: none; padding: 0in 5.4pt; height: 0.4in;">
+
+</td><td width="108" style="width: 1.5in; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+
+</td></tr><tr style="height: 0.4in;"><td width="100" style="width: 99.8pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+**Country Code**
+</td><td width="108" style="width: 1.5in; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.4in;">
+
+</td><td width="90" style="width: 1.25in; border-style: solid none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.4in;">
+
+</td><td width="108" style="width: 1.5in; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.4in;">
+
+</td></tr></tbody></table>
+ | **Attribute Name** | **Column Name** | **Data Type** | **Constraint** | **Customer ID** |  |  |  | **Customer Name** |  |  |  | **Address** |  |  |  | **City** |  |  |  | **State** |  |  |  | **Zip Code** |  |  |  | **Zip Code Plus Four** |  |  |  | **Phone** |  |  |  | **Country Code** |  |  | 
+| **Attribute Name** | **Column Name** | **Data Type** | **Constraint**
+| **Customer ID** |  |  | 
+| **Customer Name** |  |  | 
+| **Address** |  |  | 
+| **City** |  |  | 
+| **State** |  |  | 
+| **Zip Code** |  |  | 
+| **Zip Code Plus Four** |  |  | 
+| **Phone** |  |  | 
+| **Country Code** |  |  | 
+| 4.      | What will be the DISTRIBUTION KEY? Is it UNIQUE?  
+_________________________________________________________
+| 5.      | Create an SQL file with the CREATE TABLE statement.
+
+Be sure to include any column and table constraints.
+
+There is an example (non-optimized) file called create_customer.sql in the/home/gp/sql/load_files /adv_sql_files that you can use as a guide.
+
+ [gpadmin@mdw adv_sql_files]$ **vi create_customer.sql**
+| 6.      | Execute the script as gpadmin by starting a psql session and passing in the file name with the -foption. Include the datamart database as part of the psql command:
+
+[gpadmin@mdw adv_sql_files]$ **psql datamart -f create_customer.sql**
+
+<v:shape id="Picture_x0020_22" o:spid="_x0000_i1102" type="#_x0000_t75" style="width: 458pt; height: 98pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image436.png" o:title=""></v:imagedata></v:shape>
+
+You should see the words CREATE TABLE immediately under the UNIX prompt if there were no errors.
+| 7.      | Verify that the table has been created:
+
+
+
+[gpadmin@mdw adv_sql_files]$ **psql datamart \  
+-c "\dt dimensions.customer"**
+
+<v:shape id="Picture_x0020_25" o:spid="_x0000_i1101" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f731b23.PNG" style="width: 458pt; height: 131pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image437.png" o:title="SNAGHTML1f731b23.PNG"></v:imagedata></v:shape>
+|====
+
+
+
+
+
+|====
+| **Step** | **Action**
+| 1.      | The business requirements for the Transaction fact table are as follows:
+
+1.         The transaction represents all transactions that occur by a customer, at a checkout stand, at a given store by day. (In data warehousing this is called the “shopping basket” type of transaction.) It is, in effect, a summary of the all items and includes tax, payment methods, etc.
+
+2.         Each transaction is given a numeric identifier. This identifier is created in the source system (OLTP) and passed to the data warehouse. The transaction id is unique for each customer transaction and may not be null.
+
+3.         If the customer is not a rewards member, the default phone number is (999)999-9999. Otherwise rewards customers are tracked by their phone numbers.
+
+4.         The terminal id may not be null. All terminals are numbered from 1-N in each store. There are no more than 24 terminals in any given store at implementation time.
+
+5.         Item count may not be zero or negative.
+
+6.         Sales Amount may not be negative.
+
+7.         Taxes are represented in the “other amount” attribute.
+
+8.         Cash Amount + Debit Amount + Credit Card Amount may not exceed Sales Amount plus Other Amount.
+
+9.         There is an average of 100,000 transactions per day across the entire business.
+
+10.      Ninety percent of all transactions involve a rewards member customer.
+
+11.      The transaction date is a timestamp containing the date with the time. The business only wishes to store the date portion of the transaction date.
+
+12.      The historical data that will be loaded only goes back to the beginning of 2008.
+| 2.      | Determine the table name for Transaction entity.__________________________________________________________________________
+| 3.      | Determine the column name, data type, and any constraints for each attribute of the Transaction entity.
+<table class="LightList-Accent11" border="1" cellspacing="0" cellpadding="0" style="border-collapse: collapse; border: none;"><tbody><tr style="height: 0.3in;"><td width="127" style="width: 126.8pt; border-style: solid none none solid; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in; background: rgb(79, 129, 189);">
+**Attribute Name**
+</td><td width="108" style="width: 1.5in; border-style: solid solid none; border-top-color: rgb(79, 129, 189); border-right-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-right-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in; background: rgb(79, 129, 189);">
+**Column Name**
+</td><td width="90" style="width: 1.25in; border-style: solid none none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; padding: 0in 5.4pt; height: 0.3in; background: rgb(79, 129, 189);">
+**Data Type**
+</td><td width="122" style="width: 121.5pt; border-style: solid solid none; border-top-color: rgb(79, 129, 189); border-right-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-right-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in; background: rgb(79, 129, 189);">
+**Constraint**
+</td></tr><tr style="height: 0.3in;"><td width="127" style="width: 126.8pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Transaction ID**
+</td><td width="108" style="width: 1.5in; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="90" style="width: 1.25in; border-style: solid none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="122" style="width: 121.5pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="127" style="width: 126.8pt; border-style: none none none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**terminal ID**
+</td><td width="108" style="width: 1.5in; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="90" style="width: 1.25in; border: none; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="122" style="width: 121.5pt; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="127" style="width: 126.8pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Transaction Date**
+</td><td width="108" style="width: 1.5in; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="90" style="width: 1.25in; border-style: solid none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="122" style="width: 121.5pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="127" style="width: 126.8pt; border-style: none none none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Store ID**
+</td><td width="108" style="width: 1.5in; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="90" style="width: 1.25in; border: none; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="122" style="width: 121.5pt; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="127" style="width: 126.8pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Customer ID**
+</td><td width="108" style="width: 1.5in; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="90" style="width: 1.25in; border-style: solid none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="122" style="width: 121.5pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="127" style="width: 126.8pt; border-style: none none none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Item Count**
+</td><td width="108" style="width: 1.5in; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="90" style="width: 1.25in; border: none; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="122" style="width: 121.5pt; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="127" style="width: 126.8pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Sales Amount**
+</td><td width="108" style="width: 1.5in; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="90" style="width: 1.25in; border-style: solid none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="122" style="width: 121.5pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="127" style="width: 126.8pt; border-style: none none none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Discount Amount**
+</td><td width="108" style="width: 1.5in; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="90" style="width: 1.25in; border: none; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="122" style="width: 121.5pt; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="127" style="width: 126.8pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Coupon Amount**
+</td><td width="108" style="width: 1.5in; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="90" style="width: 1.25in; border-style: solid none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="122" style="width: 121.5pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="127" style="width: 126.8pt; border-style: none none none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Cash Amount**
+</td><td width="108" style="width: 1.5in; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="90" style="width: 1.25in; border: none; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="122" style="width: 121.5pt; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="127" style="width: 126.8pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Credit Card Amount**
+</td><td width="108" style="width: 1.5in; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="90" style="width: 1.25in; border-style: solid none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="122" style="width: 121.5pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="127" style="width: 126.8pt; border-style: none none none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Debit Amount**
+</td><td width="108" style="width: 1.5in; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="90" style="width: 1.25in; border: none; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="122" style="width: 121.5pt; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr><tr style="height: 0.3in;"><td width="127" style="width: 126.8pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+**Other Amount**
+</td><td width="108" style="width: 1.5in; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="90" style="width: 1.25in; border-style: solid none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-color: rgb(79, 129, 189); border-bottom-width: 1pt; padding: 0in 5.4pt; height: 0.3in;">
+
+</td><td width="122" style="width: 121.5pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt; height: 0.3in;">
+
+</td></tr></tbody></table>
+ | **Attribute Name** | **Column Name** | **Data Type** | **Constraint** | **Transaction ID** |  |  |  | **terminal ID** |  |  |  | **Transaction Date** |  |  |  | **Store ID** |  |  |  | **Customer ID** |  |  |  | **Item Count** |  |  |  | **Sales Amount** |  |  |  | **Discount Amount** |  |  |  | **Coupon Amount** |  |  |  | **Cash Amount** |  |  |  | **Credit Card Amount** |  |  |  | **Debit Amount** |  |  |  | **Other Amount** |  |  | 
+| **Attribute Name** | **Column Name** | **Data Type** | **Constraint**
+| **Transaction ID** |  |  | 
+| **terminal ID** |  |  | 
+| **Transaction Date** |  |  | 
+| **Store ID** |  |  | 
+| **Customer ID** |  |  | 
+| **Item Count** |  |  | 
+| **Sales Amount** |  |  | 
+| **Discount Amount** |  |  | 
+| **Coupon Amount** |  |  | 
+| **Cash Amount** |  |  | 
+| **Credit Card Amount** |  |  | 
+| **Debit Amount** |  |  | 
+| **Other Amount** |  |  | 
+| 4.      | What will be the DISTRIBUTION KEY? Is it UNIQUE?
+
+_______________________________________________________________________
+
+
+| 5.      | Create an SQL file with the CREATE TABLE statement.
+
+Be sure to include any column and table constraints.
+
+There is an example (non-optimized) file called create_ transaction.sql in the/home/gp/sql/load_files /adv_sql_files that you can use as a guide.
+
+ [gpadmin@mdw adv_sql_files]$ **vi create_transaction.sql**
+| 6.      | Execute the script as gpadmin by starting a psql session and passing in the file name with the -foption. Include the datamart database as part of the psql command:
+
+[gpadmin@mdw adv_sql_files]$ **psql datamart -f create_transaction.sql**
+
+<v:shape id="Picture_x0020_26" o:spid="_x0000_i1100" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f739715.PNG" style="width: 458pt; height: 98pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image438.png" o:title="SNAGHTML1f739715.PNG"></v:imagedata></v:shape>
+| 7.      | Verify the table has been created:
+
+[gpadmin@mdw adv_sql_files]$ **psql datamart -c "\d+ facts.transaction"**
+
+<v:shape id="Picture_x0020_28" o:spid="_x0000_i1099" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f73df5b.PNG" style="width: 458pt; height: 262pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image439.png" o:title="SNAGHTML1f73df5b.PNG"></v:imagedata></v:shape>
+|====
+
+
+
+|====
+| **Step** | **Action**
+| 1.      | Connect to the datamart database as gpadmin.
+
+[gpadmin@mdw adv_sql_files]$ **psql datamart**
+| 2.      | Load the dimensions.country table using the COPY command. Copy the data from/home/gp/sql/load_files/CountryData.csv into the dimensions.country table.
+
+datamart=# **COPY dimensions.country**
+
+**FROM '/home/gp/sql/load_files/CountryData.csv'**
+
+**WITH CSV HEADER**
+
+**LOG ERRORS INTO public.country_err**
+
+**SEGMENT REJECT LIMIT 10 ROWS;**
+
+<v:shape id="Picture_x0020_29" o:spid="_x0000_i1098" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f76146f.PNG" style="width: 458pt; height: 211pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image440.png" o:title="SNAGHTML1f76146f.PNG"></v:imagedata></v:shape>
+| 3.      | Check the error table, public.country_err for any errors:
+
+datamart=# **SELECT * FROM public.country_err;**
+
+Were any rows discarded? How many? Why?
+
+<v:shape id="Picture_x0020_30" o:spid="_x0000_i1097" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f768173.PNG" style="width: 458pt; height: 164pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image441.png" o:title="SNAGHTML1f768173.PNG"></v:imagedata></v:shape>
+
+_______________________________________________________________
+
+_______________________________________________________________
+
+_______________________________________________________________
+| 4.      | Load the dimensions.store table using the COPY command. Copy the data from/home/gp/sql/load_files/StoreData.csv into the dimensions.store table.
+
+datamart=# **COPY dimensions.store**
+
+**FROM '/home/gp/sql/load_files/StoreData.csv'**
+
+**WITH CSV HEADER**
+
+**LOG ERRORS INTO public.store_err**
+
+**SEGMENT REJECT LIMIT 10 ROWS;**
+
+<v:shape id="Picture_x0020_31" o:spid="_x0000_i1096" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f76f06b.PNG" style="width: 458pt; height: 221pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image442.png" o:title="SNAGHTML1f76f06b.PNG"></v:imagedata></v:shape>
+| 5.      | Check the error table, **public.store_err** for any errors:
+
+datamart=# **SELECT * FROM public.store_err;**
+
+<v:shape id="Picture_x0020_100" o:spid="_x0000_i1095" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f77f7ea.PNG" style="width: 458pt; height: 97pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image443.png" o:title="SNAGHTML1f77f7ea.PNG"></v:imagedata></v:shape>
+
+Were any rows discarded? How many? Why?
+
+_______________________________________________________________
+
+_______________________________________________________________
+| 6.      | Connect to the **datamart** database as **gpadmin**.
+
+[gpadmin@mdw adv_sql_files]$ **psql datamart**
+| 7.      | Load the dimensions.customer table using an external table. Create the external table using the following syntax:
+
+datamart=# **CREATE EXTERNAL TABLE public.customer_external (**
+
+ ** custName    VARCHAR(50),**
+
+ ** address     VARCHAR(50),**
+
+ ** city        VARCHAR(40),**
+
+ ** state       CHAR(2),**
+
+ ** zipcode     CHAR(8),**
+
+ ** zipPlusFour CHAR(4),**
+
+ ** countrycd   CHAR(3),**
+
+ ** phone       CHAR(13)**
+
+**)**
+
+**LOCATION ('file://sdw1/home/gp/sql/load_files/CustomerData.csv')**
+
+**FORMAT 'CSV' (HEADER DELIMITER ',')**
+
+**LOG ERRORS INTO public.customer_err**
+
+**SEGMENT REJECT LIMIT 10 ROWS;**
+
+<v:shape id="Picture_x0020_127" o:spid="_x0000_i1094" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f793f07.PNG" style="width: 458pt; height: 232pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image444.png" o:title="SNAGHTML1f793f07.PNG"></v:imagedata></v:shape>
+| 8.      | Validate that the table was created correctly:
+
+datamart=# **SELECT * FROM public.customer_external;**
+
+<v:shape id="Picture_x0020_142" o:spid="_x0000_i1093" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f79dc30.PNG" style="width: 458pt; height: 262pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image445.png" o:title="SNAGHTML1f79dc30.PNG"></v:imagedata></v:shape>
+| 9.      | The customers for this business are tracked by their phone numbers. A customer ID must be created for each of the customers. You will use a sequence number to create a unique customer ID for each customer. Create a sequence to support the data load of the customer dimension:  
+
+
+
+datamart=# **CREATE SEQUENCE public.CustomerSequence**
+
+**INCREMENT BY 1**
+
+**START WITH 1**
+
+**NO CYCLE;**
+
+<v:shape id="Picture_x0020_151" o:spid="_x0000_i1092" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f7a435b.PNG" style="width: 458pt; height: 98pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image446.png" o:title="SNAGHTML1f7a435b.PNG"></v:imagedata></v:shape>
+| 10.   | Insert the rows from the external table into the target table. Note that you are performing a transform of the ELT process, so you will need to specify all of the columns from the source table. Note that the sequence name is all lower case.
+
+datamart=# **INSERT INTO dimensions.customer**
+
+**(CustomerID,**
+
+ **  custName,**
+
+ **  address,**
+
+ **  city,**
+
+ **  state,**
+
+ **  zipcode,**
+
+ **  zipPlusFour,**
+
+ **  countrycd, phone)**
+
+**SELECT nextval('customersequence'),**
+
+ **  custName,**
+
+ **  address,**
+
+ **  city,**
+
+ **  state,**
+
+ **  zipcode,**
+
+ **  zipPlusFour,**
+
+ **  countrycd,**
+
+ **  phone**
+
+**FROM public.customer_external;**<v:shape id="Picture_x0020_157" o:spid="_x0000_i1091" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f7adeb0.PNG" style="width: 458pt; height: 262pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image447.png" o:title="SNAGHTML1f7adeb0.PNG"></v:imagedata></v:shape>
+| 11.   | Were any rows discarded? How many? Why?
+
+_______________________________________________________________
+
+_______________________________________________________________
+
+_______________________________________________________________
+| 12.   | Exit the PSQL session.
+| 13.   | Load the Transaction data using gpfdist and an external table. You will perform a single transformation during the INSERT… SELECT and that is a join to the Customer dimension using the phone column to get the customerid.
+
+Start a gpfdist session and verify that it is executing:
+
+[gpadmin@mdw adv_sql_files]$ **gpfdist -d /home/gp/sql/load_files \  
+-p 8081 -l /tmp/gpfdist.log &**
+
+Verify that gpfdist is running.
+
+[gpadmin@mdw adv_sql_files]$ **ps -ef | grep gpfdist**
+
+<v:shape id="Picture_x0020_1202" o:spid="_x0000_i1090" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f7d8912.PNG" style="width: 458pt; height: 222pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image448.png" o:title="SNAGHTML1f7d8912.PNG"></v:imagedata></v:shape>
+
+**Note:** If you receive an internal error that gpfdist cannot create a socket, verify that anothergpfdist process is not running on the port number you specified.
+| 14.   | Connect to the datamart database as gpadmin.
+
+[gpadmin@mdw adv_sql_files]$ **psql datamart**
+| 15.   | Create a gpfdist based external table to load the Transaction fact table. Connect to the datamartdatabase and use the following DDL to create the external table:
+
+datamart=# **CREATE EXTERNAL TABLE public.transaction_external**
+
+**(transId         BIGINT,**
+
+ ** terminalId      INTEGER,**
+
+ ** transDate       DATE,**
+
+ ** storeId         SMALLINT,**
+
+  **phone           CHAR(14),**
+
+ ** itemCnt         INTEGER,**
+
+ ** salesAmt        DECIMAL(9,2),**
+
+ ** taxAmt          DECIMAL(9,2),**
+
+ ** discountAmt     DECIMAL(9,2),**
+
+ ** couponAmt       DECIMAL(9,2),**
+
+ ** cashAmt         DECIMAL(9,2),**
+
+ ** checkAmt        DECIMAL(9,2),**
+
+ ** ccAmt           DECIMAL(9,2),**
+
+ ** debitAmt        DECIMAL(9,2),**
+
+ ** otherAmt        DECIMAL(9,2)**
+
+**)**
+
+**LOCATION**
+
+**('gpfdist://mdw:8081/TransactionData001.csv',**
+
+ ** 'gpfdist://mdw:8081/TransactionData002.csv')**
+
+**FORMAT 'csv' (HEADER DELIMITER '|')**
+
+**LOG ERRORS INTO public.transaction_err**
+
+**SEGMENT REJECT LIMIT 10 ROWS;**
+
+<v:shape id="Picture_x0020_1203" o:spid="_x0000_i1089" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f7ee9d6.PNG" style="width: 458pt; height: 309pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image449.png" o:title="SNAGHTML1f7ee9d6.PNG"></v:imagedata></v:shape>
+| 16.   | Validate that the table was created correctly:
+
+datamart-# **SELECT * FROM public.transaction_external;**
+
+<v:shape id="Picture_x0020_1211" o:spid="_x0000_i1088" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f7f4619.PNG" style="width: 458pt; height: 398pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image450.png" o:title="SNAGHTML1f7f4619.PNG"></v:imagedata></v:shape>
+| 17.   | Insert the rows from the external table into the target Transaction fact table in psql. Join the external transaction table to the customer dimension using the phone number column to get the customer id. If there were hundreds of thousands or millions of rows in the source external files, you should consider loading a specific child table or usinggpload.
+
+datamart=# **INSERT INTO facts.transaction**
+
+**(transid,**
+
+ ** terminalid,**
+
+ ** transdate,**
+
+ ** storeid,**
+
+ ** customerid,**
+
+ ** itemcnt,**
+
+ ** salesamt,**
+
+ ** taxamt,**
+
+ ** discountamt,**
+
+ ** couponamt,**
+
+ ** cashamt,**
+
+ ** checkamt,**
+
+ ** ccamt,**
+
+ ** debitamt,**
+
+ ** otheramt)**
+
+**SELECT t.transid, t.terminalid, t.transdate, t.storeid,**
+
+ ** c.customerid, t.itemcnt, t.salesamt, t.taxamt,**
+
+ ** t.discountamt, t.couponamt, t.cashamt, t.checkamt, t.ccamt,**
+
+  **t.debitamt, t.otheramt**
+
+**FROM public.transaction_external t**
+
+**INNER JOIN dimensions.customer c**
+
+**ON TRIM(c.phone) = TRIM(t.phone);**<v:shape id="Picture_x0020_1213" o:spid="_x0000_i1087" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f8051fb.PNG" style="width: 458pt; height: 301pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image451.png" o:title="SNAGHTML1f8051fb.PNG"></v:imagedata></v:shape>
+| 18.   | Change back to the home directory.
+
+[gpadmin@mdw adv_sql_files]$ **cd**
+| 19.   | Were any rows discarded? How many? Why?
+
+_______________________________________________________________
+
+_______________________________________________________________
+
+_______________________________________________________________
+| 20.   | Why did you need the TRIM function? What are the implications for loading large rows where we need to apply a function to the join conditions?
+
+_______________________________________________________________
+
+_______________________________________________________________
+
+_______________________________________________________________
+|====
+
+
+
+End of Lab Exercise

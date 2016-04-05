@@ -1,0 +1,209 @@
+= 8. Data Manipulation Language and Data Query
+
+
+
+|====
+|   
+
+**Purpose:**
+
+ | In this lab, you will familiarize yourself with theINSERT, UPDATE, and DELETE SQL commands.
+| 
+| **Tasks:** | Students perform the following task: Insert, update, and delete records.
+| 
+| **References:** | Module 4 – Defining and Securing the User Database
+
+·       Lesson: Data Manipulation Language and Data Query Language
+|====
+
+|====
+| **Step** | **Action**
+| 1.      | Connect to the faa database as the gpadmin user, if not already connected:
+
+[gpadmin@mdw ~]$ **psql faa**
+
+<v:shape id="Picture_x0020_1467" o:spid="_x0000_i1348" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6264eac.PNG" style="width: 458pt; height: 92pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image190.png" o:title="SNAGHTML6264eac.PNG"></v:imagedata></v:shape>
+
+You can also specify the database using the -d option followed by the database name.
+| 2.      | At the psql prompt, add a new record to the test_table** **table.
+
+faa=#  **INSERT INTO test_table VALUES**
+
+  ** (nextval('test_table_seq'), 'Esme', 'French', 'to love');**
+
+<v:shape id="Picture_x0020_1468" o:spid="_x0000_i1347" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML627446f.PNG" style="width: 458pt; height: 80pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image191.png" o:title="SNAGHTML627446f.PNG"></v:imagedata></v:shape>
+| 3.      | Check to see that the record you created is there:
+
+faa=#  **SELECT * from test_table WHERE name='Esme';**
+
+<v:shape id="Picture_x0020_1469" o:spid="_x0000_i1346" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML627a41b.PNG" style="width: 458pt; height: 110pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image192.png" o:title="SNAGHTML627a41b.PNG"></v:imagedata></v:shape>
+| 4.      | Update the record to change the name column to Sophie for any instances where the name column isEsme:
+
+faa=#  **UPDATE test_table SET name='Sophie' WHERE name='Esme';**
+
+<v:shape id="Picture_x0020_1470" o:spid="_x0000_i1345" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML628207b.PNG" style="width: 458pt; height: 69pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image193.png" o:title="SNAGHTML628207b.PNG"></v:imagedata></v:shape>
+| 5.      | Check to see that the record was changed:
+
+faa=#  **SELECT * from test_table WHERE name='Sophie';**
+
+<v:shape id="Picture_x0020_99" o:spid="_x0000_i1344" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML62876c4.PNG" style="width: 458pt; height: 109pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image194.png" o:title="SNAGHTML62876c4.PNG"></v:imagedata></v:shape>
+| 6.      | Delete the record. Do not forget the WHERE clause or you will delete all of the rows:
+
+faa=#  **DELETE from test_table WHERE name='Sophie';**
+
+<v:shape id="Picture_x0020_110" o:spid="_x0000_i1343" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML628cb88.PNG" style="width: 458pt; height: 69pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image195.png" o:title="SNAGHTML628cb88.PNG"></v:imagedata></v:shape>
+| 7.      | Check to see that the record was deleted:
+
+faa=#  **SELECT * from test_table WHERE name='Sophie';**
+
+<v:shape id="Picture_x0020_1485" o:spid="_x0000_i1342" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML629365b.PNG" style="width: 458pt; height: 98pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image196.png" o:title="SNAGHTML629365b.PNG"></v:imagedata></v:shape>
+
+Exit your psql session.
+
+faa=# **\q**
+|====
+
+
+
+
+
+
+
+|====
+| **Step** | **Action**
+|  | In this task, you use a variety of statements to generate a report. The report identifies the least popular baby names, across boys and girls, from data collected.
+| 1.      | Connect to the names database as the gpadmin user, if not already connected:
+
+[gpadmin@mdw ~]$ **psql names**
+| 2.      | Update the search_path for the names database so that you can easily access the tables from the names database without needing to specify the schema name.
+
+names=#  **alter database names set search_path to baby, public, pg_catalog;**
+
+<v:shape id="Picture_x0020_1500" o:spid="_x0000_i1341" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML64f71d6.PNG" style="width: 458pt; height: 80pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image197.png" o:title="SNAGHTML64f71d6.PNG"></v:imagedata></v:shape>
+| 3.      | Reconnect to the database to access the settings.
+
+names=# **\c names**
+
+<v:shape id="Picture_x0020_146" o:spid="_x0000_i1340" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6530f6c.PNG" style="width: 458pt; height: 69pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image198.png" o:title="SNAGHTML6530f6c.PNG"></v:imagedata></v:shape>
+| 4.      | Identify the tables in this database and use COUNT to verify the tables have no rows.
+
+names=# **\dt**
+
+names=# **select count(*) from names;**
+
+names=# **select count(*) from rank;**
+
+<v:shape id="Picture_x0020_160" o:spid="_x0000_i1339" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML68befeb.PNG" style="width: 458pt; height: 262pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image199.png" o:title="SNAGHTML68befeb.PNG"></v:imagedata></v:shape>
+| 5.      | Using the psql copy command, copy data from local files into the rank table. The data will be copied from the CSV file, /home/gp/sql/load_files/boys, and includes a header line. This command behaves like the SQLCOPY command, which will be covered later in the course. For now, you are populating tables with values to be manipulated and accessed.
+
+names=#  **\copy rank from /home/gp/sql/load_files/boys header delimiter as ',' csv**
+
+<v:shape id="Picture_x0020_152" o:spid="_x0000_i1338" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML65b05fa.PNG" style="width: 458pt; height: 70pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image200.png" o:title="SNAGHTML65b05fa.PNG"></v:imagedata></v:shape>
+| 6.      | Using COUNT, verify data has now been loaded into the rank table.
+
+names=# **select COUNT(*) from rank;**
+
+<v:shape id="Picture_x0020_161" o:spid="_x0000_i1337" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML68f40b9.PNG" style="width: 458pt; height: 110pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image201.png" o:title="SNAGHTML68f40b9.PNG"></v:imagedata></v:shape>
+| 7.      | Using the syntax shown earlier, load data from the files noted to the correlating tables.
+
+Use the up arrow (↑) to scroll through your PSQL buffer until you find the \copy command and change the line as needed. Use the left (←) and right (→) arrows to move through the command to the required position.
+<table class="LightList-Accent11" border="1" cellspacing="0" cellpadding="0" style="border-collapse: collapse; border: none;"><tbody><tr><td width="230" valign="top" style="width: 229.85pt; border: 1pt solid windowtext; padding: 0in 5.4pt; background: rgb(79, 129, 189);">
+**File**
+</td><td width="230" valign="top" style="width: 229.9pt; border-style: solid solid solid none; border-top-color: windowtext; border-right-color: windowtext; border-bottom-color: windowtext; border-top-width: 1pt; border-right-width: 1pt; border-bottom-width: 1pt; padding: 0in 5.4pt; background: rgb(79, 129, 189);">
+**Table**
+</td></tr><tr><td width="230" valign="top" style="width: 229.85pt; border-style: none solid solid; border-right-color: windowtext; border-bottom-color: windowtext; border-left-color: windowtext; border-right-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt;">
+/home/gp/sql/load_files/girls
+</td><td width="230" valign="top" style="width: 229.9pt; border-style: none solid solid none; border-bottom-color: windowtext; border-bottom-width: 1pt; border-right-color: windowtext; border-right-width: 1pt; padding: 0in 5.4pt;">
+rank
+</td></tr><tr style="height: 3.5pt;"><td width="230" valign="top" style="width: 229.85pt; border-style: none solid solid; border-right-color: windowtext; border-bottom-color: windowtext; border-left-color: windowtext; border-right-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; height: 3.5pt;">
+/home/gp/sql/load_files/name_ids
+</td><td width="230" valign="top" style="width: 229.9pt; border-style: none solid solid none; border-bottom-color: windowtext; border-bottom-width: 1pt; border-right-color: windowtext; border-right-width: 1pt; padding: 0in 5.4pt; height: 3.5pt;">
+names
+</td></tr></tbody></table>
+
+
+names=# **\copy rank from /home/gp/sql/load_files/girls header delimiter as ',' csv**
+
+names=# **\copy names from /home/gp/sql/load_files/name_ids header delimiter as ',' csv**
+
+<v:shape id="Picture_x0020_162" o:spid="_x0000_i1336" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6990984.PNG" style="width: 458pt; height: 89pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image202.png" o:title="SNAGHTML6990984.PNG"></v:imagedata></v:shape> | **File** | **Table** | /home/gp/sql/load_files/girls | rank | /home/gp/sql/load_files/name_ids | names
+| **File** | **Table**
+| /home/gp/sql/load_files/girls | rank
+| /home/gp/sql/load_files/name_ids | names
+| 8.      | Use COUNT to verify that the rows have been loaded into the respective tables.
+
+names=# **select COUNT(*) from rank;**
+
+names=# **select COUNT(*) from names;**
+
+<v:shape id="Picture_x0020_163" o:spid="_x0000_i1335" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML69a9732.PNG" style="width: 459pt; height: 168pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image203.png" o:title="SNAGHTML69a9732.PNG"></v:imagedata></v:shape>
+| 9.      | The rank table highlights the number of occurrences of babies given a specific name. Each row indicates the ID for the name, the name’s ranking or weight, the year the information was collected, and the number of babies given the specific name. The names table associates the ID with the name and provides the origin and local meaning of the name.  While the rank can be used to determine the least popular name as defined by the rank, this task will have you use the aggregate functions against the count associated with the names.
+
+Use the MIN function to find the lowest count of a name for each year. Remember, MIN is an aggregate function and requires the use of GROUP BY.
+
+names=# **select min(count), year from rank group by year;**
+
+<v:shape id="Picture_x0020_164" o:spid="_x0000_i1334" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6c55a52.PNG" style="width: 458pt; height: 158pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image204.png" o:title="SNAGHTML6c55a52.PNG"></v:imagedata></v:shape>
+| 10.   | Examine the rank table to list the ID(s) that had the lowest count for the year 2004. Use the information returned from the previous example to complete the request.
+
+names=# **select id from rank where year=2004 and count=164;**
+
+<v:shape id="Picture_x0020_165" o:spid="_x0000_i1333" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6ca7ee3.PNG" style="width: 458pt; height: 119pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image205.png" o:title="SNAGHTML6ca7ee3.PNG"></v:imagedata></v:shape>
+| 11.   | This two-step process can easily be changed to a single step and would allow us to collect the information for all years involved. Use the WITH clause to define a common table expression that allows you to return the ID, year, and count for the lowest assigned name for each year.
+
+names=# **WITH min_count AS**
+
+** (select min(count) as mcount, year from rank group by year)**
+
+**select rank.id, rank.year, rank.count from min_count, rank**
+
+**where min_count.year=rank.year and min_count.mcount=rank.count;**
+
+<v:shape id="Picture_x0020_166" o:spid="_x0000_i1332" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6cfcaa2.PNG" style="width: 458pt; height: 265pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image206.png" o:title="SNAGHTML6cfcaa2.PNG"></v:imagedata></v:shape>
+
+
+
+Tip: If you are familiar with the vi editor, you can edit the previous PSQL statement using the \e command. It will take you into the editor and allow you to create or modify your statement. When done modifying your statement, use:wq! to save and execute the statement. Prefer Emacs or VIM, exit psql, update the EDITOR variable to point to your preferred editor, and re-enter PSQL. For example, to set the editor to Emacs in this environment, execute the following in the shell or add it to your .bash_profile:
+
+**export EDITOR=/usr/bin/emacs**
+| 12.   | If this will be a frequently accessed statement, it would be best to save it as a view. Create a view calledmin_count_vw that contains the common table expression you defined in the previous step.
+
+names=# **CREATE VIEW min_count_vw AS**
+
+**WITH min_count AS**
+
+** (select min(count) as mcount, year from rank group by year)**
+
+**select rank.id, rank.year, rank.count from min_count, rank**
+
+**where min_count.year=rank.year and min_count.mcount=rank.count;**
+
+<v:shape id="Picture_x0020_167" o:spid="_x0000_i1331" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6d562ac.PNG" style="width: 458pt; height: 107pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image207.png" o:title="SNAGHTML6d562ac.PNG"></v:imagedata></v:shape>
+| 13.   | Using the view you created, list the least assigned baby names for the years collected. Make the report easier to read by sorting the results by year.
+
+names=# **select name, year**
+
+**from min_count_vw, names**
+
+**where names.id=min_count_vw.id**
+
+**order by year;**
+
+<v:shape id="Picture_x0020_168" o:spid="_x0000_i1330" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6e2dd38.PNG" style="width: 458pt; height: 265pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image208.png" o:title="SNAGHTML6e2dd38.PNG"></v:imagedata></v:shape>
+|  | **Summary**
+
+If you have many rows to insert, consider using COPY or external tables instead of INSERT.   
+UPDATE is used to change one or more column values of an existing row. DELETE is used to delete rows from a table based on some qualifying condition.
+
+An unqualified delete on a table will delete all rows. A more efficient way to delete all rows from a table is the TRUNCATE command.
+
+A variety of tools are available to help generate information for reports. A portion of this lab exercise focused on using some aggregate functions to collect the information that was needed. Views and common table expressions let you simplify more complex statements and make these statements available for future use.
+|====
+
+
+
+
+
+End of Lab Exercise
+
+****

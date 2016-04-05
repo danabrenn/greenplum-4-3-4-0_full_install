@@ -1,0 +1,230 @@
+= 18. Database Tuning
+
+|====
+|   
+
+**Purpose:** | In this lab, you use a combination of tools, commands, and schemas to analyze the overall performance of your environment. You will examine how the system behaves when retrieving data or updating tables.
+| 
+| **Tasks:** | Students perform the following task: Tune the database and queries.
+| 
+| **References:** | Module 8 – Performance Analysis and Tuning
+
+·       Lesson: Join Tables – Types and Methods
+
+·       Lesson: Database Tuning
+
+·       Lesson: Query Profiling
+|====
+
+
+|====
+| **Step** | **Action**
+| 1.      | While logged in as gpadmin** **on your master server, verify your parameters are as shown below.
+
+[gpadmin@mdw ~]$ **gpconfig -s parameter**
+
+Verify the following parameters:
+
+max_fsm_relations = 1000
+
+max_fsm_pages = 200000
+
+work_mem = 32MB
+
+maintenance_work_mem = 64MB
+
+For example, to search for max_fsm_relations, type the following:
+
+[gpadmin@mdw ~]$ **gpconfig -s max_fsm_relations**
+
+<v:shape id="Picture_x0020_1214" o:spid="_x0000_i1086" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f84e026.PNG" style="width: 458pt; height: 100pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image452.png" o:title="SNAGHTML1f84e026.PNG"></v:imagedata></v:shape>
+| 2.      | Load data in a table and check performance. Connect to the faa database as gpadmin.
+
+[gpadmin@mdw ~]$ **psql faa**
+| 3.      | The PSQL timing parameter shows how long it takes to complete a command. The command will be used to compare the time it takes to execute SELECT statements on specific tables.
+
+Turn timing on:
+
+faa=# **\timing**
+
+<v:shape id="Picture_x0020_1251" o:spid="_x0000_i1085" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1ff55190.PNG" style="width: 458pt; height: 68pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image453.png" o:title="SNAGHTML1ff55190.PNG"></v:imagedata></v:shape>
+| 4.      | Create a new table and load as shown. This step will create a new table and load it with more than 20 million records thus it might take a couple of minutes.
+
+faa=# **create table factontimeperformance2 as select * fromfactontimeperformance;**
+
+<v:shape id="Picture_x0020_1215" o:spid="_x0000_i1084" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1fdf3e10.PNG" style="width: 458pt; height: 146pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image454.png" o:title="SNAGHTML1fdf3e10.PNG"></v:imagedata></v:shape>
+| 5.      | Verify the data loaded:
+
+faa=# **SELECT count(*) from factontimeperformance2;**
+
+<v:shape id="Picture_x0020_1248" o:spid="_x0000_i1083" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1fe2a21f.PNG" style="width: 458pt; height: 116pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image455.png" o:title="SNAGHTML1fe2a21f.PNG"></v:imagedata></v:shape>
+| 6.      | Analyze and vacuum the table:
+
+faa=# **vacuum analyze factontimeperformance2;**
+
+<v:shape id="Picture_x0020_1249" o:spid="_x0000_i1082" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1ff0155b.PNG" style="width: 458pt; height: 75pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image456.png" o:title="SNAGHTML1ff0155b.PNG"></v:imagedata></v:shape>
+| 7.      | Re-check performance:
+
+faa=# **SELECT  count(*) from factontimeperformance2;**
+
+<v:shape id="Picture_x0020_1250" o:spid="_x0000_i1081" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1ff10516.PNG" style="width: 458pt; height: 118pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image457.png" o:title="SNAGHTML1ff10516.PNG"></v:imagedata></v:shape>
+
+Note that the time it took to perform this query should be less than the first time the query was executed. TheVACUUM ANALYZE step you performed provided more up to date statistical information to the query planner so that it could determine the most optimal plan for the query.
+| 8.      | Disable PSQL timing. Use the \timing command to toggle the setting to off.
+
+faa=# **\timing**
+
+<v:shape id="Picture_x0020_1252" o:spid="_x0000_i1080" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1ff5f741.PNG" style="width: 458pt; height: 70pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image458.png" o:title="SNAGHTML1ff5f741.PNG"></v:imagedata></v:shape>
+| 9.      | Greenplum provides an administrative schema called gp_toolkit that you can use to query the system catalogs, log files, and operating environment for system status information. The gp_toolkit schema contains a number of views that you can access using SQL commands. The gp_toolkit schema is accessible to all database users, although some objects may require superuser permissions.
+
+Look for tables that do not have statistics:
+
+faa=# **SELECT * from gp_toolkit.gp_stats_missing;**
+
+<v:shape id="Picture_x0020_1253" o:spid="_x0000_i1079" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1ff6bf7f.PNG" style="width: 458pt; height: 300pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image459.png" o:title="SNAGHTML1ff6bf7f.PNG"></v:imagedata></v:shape>
+| 10.   | Look for table bloat from lack of vacuuming:
+
+faa=# **SELECT * from gp_toolkit.gp_bloat_diag limit 5;**
+
+<v:shape id="Picture_x0020_1254" o:spid="_x0000_i1078" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1ff71f4a.PNG" style="width: 458pt; height: 113pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image460.png" o:title="SNAGHTML1ff71f4a.PNG"></v:imagedata></v:shape>
+| 11.   | If there is performance issue based on how a table is distributed, the distribution can be changed with anALTER TABLE command:
+
+faa=# **ALTER TABLE factontimeperformance SET DISTRIBUTED BY (year);**
+
+<v:shape id="Picture_x0020_1255" o:spid="_x0000_i1077" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1ffd8fa9.PNG" style="width: 458pt; height: 68pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image461.png" o:title="SNAGHTML1ffd8fa9.PNG"></v:imagedata></v:shape>
+
+**Note:** This command may take several minutes to process.
+| 12.   | Examine other views such as the pg_stat_activity, pg_locks and pg_class views.
+
+pg_stat_activity has information about current running queries.
+
+Look for the start time of all current queries in the database:
+
+faa=# **select query_start, procpid from pg_stat_activity;**
+
+<v:shape id="Picture_x0020_1256" o:spid="_x0000_i1076" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1ffe57c8.PNG" style="width: 458pt; height: 107pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image462.png" o:title="SNAGHTML1ffe57c8.PNG"></v:imagedata></v:shape>
+| 13.   | pg_locks has data about locks in the database. This syntax shows the locks that are on the tables being accessed.
+
+faa=# **select datname, relname, pid, mode**
+
+**from pg_locks,pg_database,pg_class**
+
+**where pg_locks.database=pg_database.oid and**
+
+**    pg_locks.relation=pg_class.oid;**
+
+<v:shape id="Picture_x0020_1257" o:spid="_x0000_i1075" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML200bb2c3.PNG" style="width: 458pt; height: 164pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image463.png" o:title="SNAGHTML200bb2c3.PNG"></v:imagedata></v:shape>
+
+In this case, the tables being accessed are the ones referenced in the query just executed. There are no other accesses on the database at this time.Look for locks in the database:
+| 14.   | Look for owner and object type in the database:
+
+faa=# **select relname, relowner from pg_class limit 5;**
+
+<v:shape id="Picture_x0020_1258" o:spid="_x0000_i1074" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML20100e5a.PNG" style="width: 458pt; height: 143pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image464.png" o:title="SNAGHTML20100e5a.PNG"></v:imagedata></v:shape>
+| 15.   | Exit your PSQL session.
+| 16.   | Database logs are another place to look for errors or tuning issues.  In UNIX as the  gpadmin user
+
+The following are the database log files that reside on the system:
+
+·       pg_xlog contains Greenplum Write Ahead Logs (WAL, Greenplum  implementation of transaction logging) files (normally 16MB in size,  each).
+
+·       pg_clog contains the commit log files which contain transaction commit status of a transaction. One main purpose is to perform a database recovery in case of a crash by replaying these logs.
+
+·       pg_log contains the database instance logs by date. This is where you will find instance errors like missing files or filled up disks. It also holds the connection information.
+
+Identify the logs that exist and use gplogfilter to access the content. The gplogfilter syntax here is looking at one file instead of all log files (the default behavior) and looks for the last three error messages generated in the file you specify.
+
+[gpadmin@mdw ~]$ **ls $MASTER_DATA_DIRECTORY/pg_log**
+
+gpdb-2015-03-31_160631.csv  gpdb-2015-04-01_000000.csv  startup.log  
+[gpadmin@mdw ~]$ **gplogfilter $MASTER_DATA_DIRECTORY/pg_log/gpdb-2015-04-01_000000.csv -n 3 –t**
+
+<v:shape id="Picture_x0020_1259" o:spid="_x0000_i1073" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML201d7a07.PNG" style="width: 458pt; height: 304pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image465.png" o:title="SNAGHTML201d7a07.PNG"></v:imagedata></v:shape>
+
+**Note: **Replace the file name shown with a file that exists in your pg_log environment.
+| 17.   | Use UNIX operating system commands to see performance from the OS point of view:
+
+·      top is used to get information on CPU and memory performance.
+
+·      df provides information on the capacity of the file systems.
+
+·      ps -ef | grep postgres lets you look for postgres processes currently running.
+
+·      vmstat is a utility that provides information on virtual memory usage on the system.
+
+·      netstat is a network status utility.
+
+·      gpstate is a Greenplum utility that provides information on the state of the cluster.
+| 18.   | Getting an explain plan out of a query in Greenplum is easy. Add the word EXPLAIN to the front of your query to see how the query optimizer will execute your query. You can then change the query to see if you can affect the cost to make it lower.
+
+Open another PSQL session and run the two queries below. Verify the differences in the EXPLAIN plan:
+
+faa=# **EXPLAIN select flightnum, dayid**
+
+**from factontimeperformance, dimairline, dimairport**
+
+**where dimairline.airlinename = 'United Air Lines Inc.: UA' and**
+
+**    dimairport.airportdescription = 'Denver, CO: Denver International'**
+
+**    and factontimeperformance.airlineid = dimairline.airlineid**
+
+**    and dimairport.airportid = factontimeperformance.originairportid;**
+
+<v:shape id="Picture_x0020_1262" o:spid="_x0000_i1072" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML202240bf.PNG" style="width: 458pt; height: 395pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image466.png" o:title="SNAGHTML202240bf.PNG"></v:imagedata></v:shape>
+| 19.   | faa=# **EXPLAIN select flightnum, dayid**
+
+**from factontimeperformance, dimairline, dimairport**
+
+**where dimairport.airportid = factontimeperformance.originairportid**
+
+**    and dimairline.airlinename = 'United Air Lines Inc.: UA'**
+
+**    and dimairport.airportdescription = 'Denver, CO: Denver International'**
+
+**    and factontimeperformance.airlineid = dimairline.airlineid;**
+
+<v:shape id="Picture_x0020_1263" o:spid="_x0000_i1071" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML20237c68.PNG" style="width: 458pt; height: 416pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image467.png" o:title="SNAGHTML20237c68.PNG"></v:imagedata></v:shape>
+
+**Note: **Both of the queries result in the same execution plan. Based on the statistics Greenplum will optimize the query the same way regardless of the ordering of the WHERE clause.
+| 20.   | Generate execution plans for the following two queries and compare the execution plans:
+
+faa=# **EXPLAIN SELECT distinct carrierid, flightnum  
+FROM factontimeperformance f, dimairline al, dimairport ap  
+WHERE f.airlineid = al.airlineid   
+   AND f.originairportid = ap.airportid  
+   AND f.originairportid in (SELECT AIRPORTID  
+     FROM dimairport  
+     WHERE airportdescription  = 'Denver, CO: Denver International')  
+   AND f.destairportid in (SELECT AIRPORTID  
+     FROM dimairport  
+     WHERE airportdescription  = 'Boston, MA: Logan International');**
+
+<v:shape id="Picture_x0020_1264" o:spid="_x0000_i1070" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML2024635c.PNG" style="width: 458pt; height: 427pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image468.png" o:title="SNAGHTML2024635c.PNG"></v:imagedata></v:shape>
+| 21.   | faa=# **EXPLAIN SELECT distinct carrierid, flightnum  
+FROM factontimeperformance f, dimairline al, dimairport ap  
+WHERE f.airlineid = al.airlineid   
+   AND f.originairportid in (SELECT AIRPORTID  
+    FROM dimairport  
+    WHERE airportdescription = 'Denver, CO: Denver International')  
+   AND f.destairportid in (SELECT AIRPORTID  
+    FROM dimairport  
+    WHERE airportdescription = 'Boston, MA: Logan International');**
+
+<v:shape id="Picture_x0020_1267" o:spid="_x0000_i1069" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML20250278.PNG" style="width: 458pt; height: 427pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image469.png" o:title="SNAGHTML20250278.PNG"></v:imagedata></v:shape>
+
+**Note:** While both of the queries display the same results, they have very different execution plans. The second query omits one of the join relations and creates a partial Cartesian product which has much slower performance. This can be identified in the execution plan from the additional Materialize step that is required.
+| 22.   | Exit your PSQL session.
+| 23.   | **Summary**
+
+The EXPLAIN command allows you to view the query plan for a query. EXPLAIN** **ANALYZE will actually run the query and show you the plan that was executed but does not return results.
+
+Query plans are read from bottom to top and show a tree plan of nodes. A node represents a database operation, such as a table scan, a join, or a sort. Greenplum Database plans will also show motion nodes, which are operations that move tuples between the segment instances or from the segment instances to the master. Examining query plans helps uncover areas where performance can be improved.
+
+In addition to query plans, using UNIX-based commands and tools, Greenplum clients can provide detailed information on how the system is behaving. The hardware and network has a very strong impact on performance, so those should always remain a part of your performance tuning goals.
+|====
+
+
+
+End of Lab Exercise
+

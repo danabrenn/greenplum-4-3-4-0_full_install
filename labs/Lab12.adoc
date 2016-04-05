@@ -1,0 +1,423 @@
+= 12. Data Loading
+
+
+
+|====
+|   
+
+**Purpose:** | The purpose of this lab is to learn the different techniques for loading data into a Greenplum system.
+
+You will start by using the COPY command. TheCOPY command is well suited for importing small amounts of data in text or CSV format.
+
+The second technique you will learn for loading data is creating external tables and using an insert statement from the external table into an internal Greenplum table.
+
+The third technique that you will learn for loading data is using the gpfdist utility.
+| 
+| **Tasks:** | Students perform the following tasks:
+
+·       Create a dimension table and load data usingCOPY
+
+·       Create a dimension table and load data using external tables
+
+·       Create a fact table and load data usinggpfdist
+
+·       Create a writeable external table to populate a different database
+
+·       Load data from a compressed file withgpfdist
+| 
+| **References:** | Module 5 – Data Loading and Distribution
+
+·       Lesson: Data Loading
+|====
+
+**COPY**
+
+|====
+| **Step** | **Action**
+| 1.      | Connect to the faa database as the gpadmin user:
+
+[gpadmin@mdw ~]$ **psql faa**
+
+<v:shape id="Picture_x0020_317" o:spid="_x0000_i1263" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLb1dd09.PNG" style="width: 446pt; height: 88pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image275.png" o:title="SNAGHTMLb1dd09.PNG"></v:imagedata></v:shape>
+| 2.      | In a separate terminal session where you have a psql session started, create the first Dimension tableDimAirline:
+
+faa=# **Create table DimAirline(**
+
+ **  AirlineID Smallint,**
+
+ **  AirlineName Character varying(95))**
+
+ **  WITH (OIDS=FALSE)**
+
+**DISTRIBUTED BY (AirlineID);**
+
+<v:shape id="Picture_x0020_318" o:spid="_x0000_i1262" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1274983.PNG" style="width: 446pt; height: 105pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image276.png" o:title="SNAGHTML1274983.PNG"></v:imagedata></v:shape>
+
+Note: You can also copy and paste this command from the script DDLScript.sql located in/rawdata/FAAData.
+| 3.      | From the psql session, use the COPY command to populate the DimAirline table using the data from the CSV file:
+
+faa=# **COPY DimAirline FROM '/rawdata/FAAData/DimAIRLINES.csv'**
+
+ **  WITH DELIMITER ',' CSV HEADER QUOTE '"'**
+
+ **  SEGMENT REJECT LIMIT 10 ROWS;**
+
+<v:shape id="Picture_x0020_352" o:spid="_x0000_i1261" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1283900.PNG" style="width: 446pt; height: 97pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image277.png" o:title="SNAGHTML1283900.PNG"></v:imagedata></v:shape>
+
+Use single quotes to refer to the file in the COPY command.  The delimiter used in this file is the comma. The data file is a CSV file with a header. Quoted items are surrounded with double quotes.
+
+In this example, a maximum of ten (10) row failures are allowed before the copy fails.
+
+Note: You can also copy and paste the above command from the script CopyData.sql located on/rawdata/FAAData**.**
+| 4.      | Verify that the table is now populated with data:
+
+faa=# **SELECT * FROM DimAirline;**
+
+<v:shape id="Picture_x0020_354" o:spid="_x0000_i1260" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML128f913.PNG" style="width: 446pt; height: 418pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image278.png" o:title="SNAGHTML128f913.PNG"></v:imagedata></v:shape>
+
+Hit q to quit scrolling through the data or use the spacebar to scroll through all of the data.
+|  | **Summary**
+
+The COPY command can be used to load data from a file (or from standard input) into a table. COPY can be run as a single command in non-interactive mode or in an interactive psql session. COPY does not load data in parallel, so it is better suited for loading smaller amounts of data. If loading large amounts of data, external tables offer better load performance.
+
+If your data load file contains mixed data, you can use COPY to quickly load the data into a temporary table and then insert it from there through the parent table.
+|====
+**  
+**
+
+|====
+| **Step** | **Action**
+| 1.      | Define an external table called public.airport_external that points to a CSV file located on another server. The file can be accessed as file://sdw1/loaddata/DimAIRPORTS.csv. To create the table, use theCREATE EXTERNAL TABLE command:
+
+faa=# **CREATE EXTERNAL TABLE public.airport_external**
+
+ **  (AirportID Character(3),**
+
+ **  AirportDescription Character varying(85))**
+
+ **  LOCATION ('file://sdw1/loaddata/DimAIRPORTS.csv')**
+
+ **  FORMAT 'CSV' (HEADER)**
+
+ **  LOG ERRORS INTO public.airport_err**
+
+ **  SEGMENT REJECT LIMIT 10 ROWS;**
+
+<v:shape id="Picture_x0020_355" o:spid="_x0000_i1259" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML132123e.PNG" style="width: 446pt; height: 165pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image279.png" o:title="SNAGHTML132123e.PNG"></v:imagedata></v:shape>
+
+Note:** **When using the file:// protocol, the external data file(s) must reside on a segment host in a location accessible by the Greenplum super user (gpadmin).
+| 2.      | Verify that you are able to access data from the external table by counting the number of records:
+
+faa=# **SELECT COUNT(*) FROM public.airport_external;**
+
+<v:shape id="Picture_x0020_356" o:spid="_x0000_i1258" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1338cd9.PNG" style="width: 446pt; height: 108pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image280.png" o:title="SNAGHTML1338cd9.PNG"></v:imagedata></v:shape>
+
+If you receive an error, verify the syntax you used to create the external table, the host name for the file, and the file name. Verify that the file is in the location you specified in the external table syntax. If necessary, drop the external table using DROP EXTERNAL TABLE public.airport_external and recreate the external table again.
+| 3.      | Create a standard table to copy the external data into:
+
+faa=# **CREATE TABLE faadata.DimAirport(**
+
+ **  AirportID Character(3),**
+
+ **  AirportDescription Character varying(85))**
+
+ **  WITH (OIDS=FALSE)  
+   DISTRIBUTED BY (AirportID);**
+
+<v:shape id="Picture_x0020_357" o:spid="_x0000_i1257" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML13402e3.PNG" style="width: 446pt; height: 107pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image281.png" o:title="SNAGHTML13402e3.PNG"></v:imagedata></v:shape>
+
+**Note:** You can also copy and paste this command from the DDLScript.sql script.
+| 4.      | Insert the data into the DimAirport from the external table:
+
+faa=# **INSERT INTO faadata.DimAirport**
+
+**SELECT * FROM public.airport_external;**
+
+<v:shape id="Picture_x0020_358" o:spid="_x0000_i1256" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML134c769.PNG" style="width: 446pt; height: 80pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image282.png" o:title="SNAGHTML134c769.PNG"></v:imagedata></v:shape>
+| 5.      | Verify that the dimension table now contains data:
+
+faa=# **SELECT * FROM faadata.DimAirport LIMIT  10;**
+
+**  
+**<v:shape id="Picture_x0020_359" o:spid="_x0000_i1255" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1352c34.PNG" style="width: 446pt; height: 197pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image283.png" o:title="SNAGHTML1352c34.PNG"></v:imagedata></v:shape>
+
+Note: The LIMIT clause returns the specified number of rows to the user, reducing the amount of memory required by the client to handle the number of rows returned by Greenplum. This can be helpful if your query returns a large number of rows but you wish to only view a subset of these rows.
+| 6.      | Exit the database before proceeding.
+|  | **Summary**
+
+Both CREATE EXTERNAL TABLE and COPY operations can be run using the single row error isolation feature. This feature allows you to load good rows while filtering out error rows. Error rows can be logged in to an error table for further examination. External tables offer additional flexibility over COPY because you can use regular SQL commands to select and move the data prior to inserting it into its final destination tables. This is useful for ETL processing common in data warehousing applications.
+
+It is good practice to automatically run ANALYZE after any data load so that the query planner has the most up-to-date statistics. If you had any errors during your data loads, it is also a good idea to runVACUUM to reclaim any wasted space.
+|====
+
+
+
+gpfdist
+
+|====
+| **Step** | **Action**
+| 1.      | If not already connected to the master server, open a terminal session to the master server and connect as gpadmin.
+| 2.      | Start a gpfdist session.
+
+[gpadmin@mdw ~]$ **gpfdist -d /rawdata/FAAData -p 8081 \  
+-l /home/gpadmin/log &**
+
+<v:shape id="Picture_x0020_360" o:spid="_x0000_i1254" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML136d9a2.PNG" style="width: 446pt; height: 185pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image284.png" o:title="SNAGHTML136d9a2.PNG"></v:imagedata></v:shape>
+
+This starts a parallel file distribution session on port 8081 for files in the directory,/rawdata/FAAData. These files can now be read into the database from an external table.
+| 3.      | Verify that gpfdist is running:
+
+[gpadmin@mdw ~]$ **pgrep gpfdist**
+
+<v:shape id="Picture_x0020_361" o:spid="_x0000_i1253" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML13765d9.PNG" style="width: 446pt; height: 1in; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image285.png" o:title="SNAGHTML13765d9.PNG"></v:imagedata></v:shape>
+| 4.      | Examine the contents of the /rawdata/FAAData/CreateExt-OnTimePerformance.sql file and go to the end of it. You will not be making any changes to this file.
+|  | This file will create an external table as shown below.
+
+CREATE EXTERNAL TABLE public.FactOnTimePerformance_external  
+(…  
+    )  
+LOCATION ('gpfdist://mdw:8081/On_Time_On_Time_Performance_2008_1.csv',  
+ 'gpfdist://mdw:8081/On_Time_On_Time_Performance_2008_2.csv')  
+FORMAT 'CSV' (HEADER DELIMITER ',')  
+LOG ERRORS INTO public.fact_err  
+SEGMENT REJECT LIMIT 10 ROWS;
+| 5.      | Execute the script as shown.
+
+[gpadmin@mdw ~]$ **psql \  
+-f /rawdata/FAAData/CreateExt-OnTimePerformance.sql -d faa**
+
+<v:shape id="Picture_x0020_362" o:spid="_x0000_i1252" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML13b58df.PNG" style="width: 446pt; height: 127pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image286.png" o:title="SNAGHTML13b58df.PNG"></v:imagedata></v:shape>
+
+The output highlights that the fact_err table did not previously exist. One will be created to capture any failures. The last portion of the output highlights that a header is expected of all files loaded through this external table.
+| 6.      | Connect to the faa database.
+
+[gpadmin@mdw ~]$ **psql faa**
+
+<v:shape id="Picture_x0020_364" o:spid="_x0000_i1251" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML13fde05.PNG" style="width: 446pt; height: 89pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image287.png" o:title="SNAGHTML13fde05.PNG"></v:imagedata></v:shape>
+| 7.      | Confirm that the contents of the files can now be accessed through the external table created:
+
+faa=# **SELECT * from public.factontimeperformance_external limit 10;**
+
+<v:shape id="Picture_x0020_365" o:spid="_x0000_i1250" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML140a27c.PNG" style="width: 446pt; height: 418pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image288.png" o:title="SNAGHTML140a27c.PNG"></v:imagedata></v:shape>
+| 8.      | Create a regular heap table based on the external table and populate it with the data from the external table:
+
+faa=# **create table faadata.factontimeperformance**
+
+ **  As**
+
+ **  Select * from public.factontimeperformance_external**
+
+ **  Distributed randomly;**
+
+<v:shape id="Picture_x0020_366" o:spid="_x0000_i1249" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML14214fc.PNG" style="width: 446pt; height: 100pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image289.png" o:title="SNAGHTML14214fc.PNG"></v:imagedata></v:shape>
+| 9.      | Confirm that the faadata.factontimeperformance table has been created and populated:
+
+faa=# **SELECT * from faadata.factontimeperformance limit 10;**
+
+<v:shape id="Picture_x0020_367" o:spid="_x0000_i1248" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1431a69.PNG" style="width: 446pt; height: 418pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image290.png" o:title="SNAGHTML1431a69.PNG"></v:imagedata></v:shape>
+
+The LIMIT 10 clause lists only 10 of the possible rows.
+| 10.   | Execute the /rawdata/FAAData/DropTables.sql script to drop the tables created. This script will drop the dimairline, dimairport, and factontimeperformance tables.
+
+faa=# **\i /rawdata/FAAData/DropTables.sql**
+
+<v:shape id="Picture_x0020_368" o:spid="_x0000_i1247" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML14768f5.PNG" style="width: 446pt; height: 92pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image291.png" o:title="SNAGHTML14768f5.PNG"></v:imagedata></v:shape>
+| 11.   | The next two steps will create and populate the tables that will be used in future labs.
+
+Create the tables by executing the script DDLScript.sql**.**
+
+faa=# **\i /rawdata/FAAData/DDLScript.sql**
+
+<v:shape id="Picture_x0020_369" o:spid="_x0000_i1246" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML14b6473.PNG" style="width: 446pt; height: 236pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image292.png" o:title="SNAGHTML14b6473.PNG"></v:imagedata></v:shape>
+| 12.   | Load data for the tables you just created in the faa schema by executing the script, CopyData.sql. The data is approximately a total of 20M rows and may take 5-10 minutes to populate.
+
+
+
+faa=# **\i /rawdata/FAAData/CopyData.sql**
+
+<v:shape id="Picture_x0020_370" o:spid="_x0000_i1245" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1513910.PNG" style="width: 446pt; height: 418pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image293.png" o:title="SNAGHTML1513910.PNG"></v:imagedata></v:shape>
+| 13.   | Exit the database.
+|  | **Summary**
+
+The parallel file distribution program can be used in conjunction with gpload or other ETL tools to take advantage of the parallel load. It starts a light-weight session on the port specified and can be used to load multiple files from the same directory.
+
+You can start multiple gpfdist processes to maximize the transfer of data.
+|====
+
+gpfdist
+
+|====
+| **Step** | **Action**
+| 1.      | If not already connected to the master server, open a terminal session to the master server and connect as gpadmin.
+| 2.      | Create a directory called data in your home directory that you will use in this lab. This directory will be used by writable tables to create files with data pushed from the database.
+
+[gpadmin@mdw ~]$ **mkdir data**
+
+<v:shape id="Picture_x0020_371" o:spid="_x0000_i1244" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML155a337.PNG" style="width: 446pt; height: 61pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image294.png" o:title="SNAGHTML155a337.PNG"></v:imagedata></v:shape>
+| 3.      | Start a gpfdist session that will access files in the ~/data directory you created. Start this gpfdist session on port 8082. You must have write permission on the directory you are using for this session.
+
+[gpadmin@mdw ~]$ **gpfdist -d ~/data -p 8082 \**
+
+**-l /home/gpadmin/log &**
+
+<v:shape id="Picture_x0020_372" o:spid="_x0000_i1243" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1572217.PNG" style="width: 446pt; height: 185pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image295.png" o:title="SNAGHTML1572217.PNG"></v:imagedata></v:shape>
+
+This starts a parallel file distribution session on port 8082 for files in the directory, /home/gpadmin/data.
+| 4.      | Verify that gpfdist is running for the newly created session:
+
+[gpadmin@mdw ~]$ **ps -ef | grep gpfdist**
+
+<v:shape id="Picture_x0020_373" o:spid="_x0000_i1242" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15a1b63.PNG" style="width: 446pt; height: 110pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image296.png" o:title="SNAGHTML15a1b63.PNG"></v:imagedata></v:shape>
+
+You may see a second gpfdist session running for port 8081 created earlier in the lab.
+| 5.      | Connect to the faa database as the gpadmin user.
+
+[gpadmin@mdw ~]$ **psql faa**
+
+<v:shape id="Picture_x0020_374" o:spid="_x0000_i1241" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15e944a.PNG" style="width: 446pt; height: 89pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image297.png" o:title="SNAGHTML15e944a.PNG"></v:imagedata></v:shape>
+| 6.      | Create a writable external called XTABLE_EXT0. The table will be a copy of the structure of the dimairport** **table. The table should point to the wtable file through the gpfdist session running on port 8082.
+
+
+
+faa=# **CREATE WRITABLE EXTERNAL TABLE XTABLE_EXT0 (LIKE DIMAIRPORT)**
+
+**LOCATION ('gpfdist://mdw:8082/wtable')**
+
+**FORMAT 'TEXT' (DELIMITER '|');**
+
+<v:shape id="Picture_x0020_375" o:spid="_x0000_i1240" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15f1c6c.PNG" style="width: 446pt; height: 108pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image298.png" o:title="SNAGHTML15f1c6c.PNG"></v:imagedata></v:shape>
+
+The gpfdist process is pointing to /home/gpadmin/data on the master server, mdw. This writeable table is therefore pointing to the file,/home/gpadmin/data/wtable. Data with multiple columns will be separated with the pipe (|) symbol.
+| 7.      | Populate the wtable file with content from the dimairport table. This is known as unloading data. It does not, however, remove data from the dimairport table.
+
+faa=#**  insert into xtable_ext0 select * from dimairport;**
+
+<v:shape id="Picture_x0020_376" o:spid="_x0000_i1239" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15f7fff.PNG" style="width: 446pt; height: 1in; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image299.png" o:title="SNAGHTML15f7fff.PNG"></v:imagedata></v:shape>
+| 8.      | Verify that the contents of the file have been populated with the data contained in the dimairport table. Use the escape shell (!) to execute the more command for the /home/gpadmin/data/wtable file.
+
+faa=# \! **more /home/gpadmin/data/wtable**
+
+<v:shape id="Picture_x0020_384" o:spid="_x0000_i1238" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML16b1d95.PNG" style="width: 446pt; height: 418pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image300.png" o:title="SNAGHTML16b1d95.PNG"></v:imagedata></v:shape>
+
+Hit **q** to exit.
+| 9.      | Create a new database called dbbackup.
+
+faa=#** create database dbbackup;**
+
+<v:shape id="Picture_x0020_377" o:spid="_x0000_i1237" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML16016c1.PNG" style="width: 446pt; height: 69pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image301.png" o:title="SNAGHTML16016c1.PNG"></v:imagedata></v:shape>
+| 10.   | Connect to the dbbackup database.
+
+faa=#  **\c dbbackup**
+
+<v:shape id="Picture_x0020_378" o:spid="_x0000_i1236" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1607a73.PNG" style="width: 446pt; height: 71pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image302.png" o:title="SNAGHTML1607a73.PNG"></v:imagedata></v:shape>
+| 11.   | Create a new schema for the dbbackup** **database called backupdata**.**
+
+dbbackup=#** create schema backupdata;**
+
+<v:shape id="Picture_x0020_379" o:spid="_x0000_i1235" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1615b40.PNG" style="width: 446pt; height: 69pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image303.png" o:title="SNAGHTML1615b40.PNG"></v:imagedata></v:shape>
+| 12.   | Change the search_ path parameter on the dbbackup database so that the backupdata schema is the default schema.
+
+dbbackup=#** alter database dbbackup set search_path to  
+backupdata,public,pg_catalog;**
+
+<v:shape id="Picture_x0020_380" o:spid="_x0000_i1234" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML161b60c.PNG" style="width: 446pt; height: 78pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image304.png" o:title="SNAGHTML161b60c.PNG"></v:imagedata></v:shape>
+| 13.   | Reconnect to the dbbackup database. This step is necessary for reloading the new search_path** **parameter.
+
+dbbackup=#**  \c dbbackup**
+
+<v:shape id="Picture_x0020_381" o:spid="_x0000_i1233" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML16207f3.PNG" style="width: 446pt; height: 70pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image305.png" o:title="SNAGHTML16207f3.PNG"></v:imagedata></v:shape>
+| 14.   | Create dimairport** **table in the dbbackup** **database using the following syntax:
+
+dbbackup=#** create table dimairport (**
+
+**    airportid character(3),**
+
+**    airportdescription character varying(85))**
+
+**    with (oids=false);**
+
+<v:shape id="Picture_x0020_382" o:spid="_x0000_i1232" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML162604f.PNG" style="width: 446pt; height: 157pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image306.png" o:title="SNAGHTML162604f.PNG"></v:imagedata></v:shape>
+| 15.   | Populate the dimairport table with the content from the/home/gpadmin/data/wtable file.
+
+dbbackup=#** copy dimairport from '/home/gpadmin/data/wtable'   
+with delimiter '|';**
+
+<v:shape id="Picture_x0020_383" o:spid="_x0000_i1231" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML167266b.PNG" style="width: 446pt; height: 79pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image307.png" o:title="SNAGHTML167266b.PNG"></v:imagedata></v:shape>
+|  | **Summary**
+
+Writable external tables are used to select rows from database tables and output the rows to files, named pipes, or to other executable programs. You could unload data from a Greenplum Database table and send that data to a text file. Once the text file is created, you can use it to populate another Greenplum Database table. This technique, shown in the exercise you just completed, is an example of migrating data from one database to another. If necessary, you can perform transforms on the data when inserting it into the database.
+
+Writable external tables only allow INSERT operations.
+|====
+
+
+
+
+
+
+
+gpfdist
+
+
+
+|====
+| **Step** | **Action**
+| 1.      | Connect to the faa database as gpadmin.
+
+dbbackup=# **\c faa**
+| 2.      | Create an external** **table called public.gztable based on the DDL of the factontimeperformance table. Populate public.gztable with the contents from a compressed file without first decompressing it.
+
+faa=#** create external table public.gztable   
+    (like factontimeperformance) **
+
+**location  
+   ('gpfdist://mdw:8081//On_Time_On_Time_Performance_2008_1.csv.gz')                                                          **
+
+**format 'csv' (header delimiter ',');**
+
+<v:shape id="Picture_x0020_385" o:spid="_x0000_i1230" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML18557e7.PNG" style="width: 446pt; height: 138pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image308.png" o:title="SNAGHTML18557e7.PNG"></v:imagedata></v:shape>
+| 3.      | Verify the external table has been created listing external tables with the \dx command.
+
+faa=#** **\dx
+
+<v:shape id="Picture_x0020_386" o:spid="_x0000_i1229" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML185ac7c.PNG" style="width: 446pt; height: 166pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image309.png" o:title="SNAGHTML185ac7c.PNG"></v:imagedata></v:shape>
+| 4.      | To make the output easier to see, complete the following to change the output mode in PSQL:
+
+·       Issue the following command to eliminate the header from the output:  
+faa=# **\t on**
+
+·       Issue the following command to change to unaligned output. The default separator for unaligned output is the pipe (|) symbol:  
+faa=# **\a**
+
+·       Issue the following command to change the field separator to a comma (,):  
+faa=# **\f ,**
+
+<v:shape id="Picture_x0020_387" o:spid="_x0000_i1228" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML18dc04a.PNG" style="width: 446pt; height: 107pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image310.png" o:title="SNAGHTML18dc04a.PNG"></v:imagedata></v:shape>
+| 5.      | List two records from this external table as shown.
+
+faa=#** select * from gztable limit 2;**
+
+<v:shape id="Picture_x0020_388" o:spid="_x0000_i1227" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML18e5c2b.PNG" style="width: 446pt; height: 156pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image311.png" o:title="SNAGHTML18e5c2b.PNG"></v:imagedata></v:shape>
+| 6.      | Reset your output by issuing the following PSQL meta commands:
+
+faa=# **\t off**
+
+faa=# **\a**
+
+<v:shape id="Picture_x0020_390" o:spid="_x0000_i1226" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1927ed7.PNG" style="width: 446pt; height: 91pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image312.png" o:title="SNAGHTML1927ed7.PNG"></v:imagedata></v:shape>
+| 7.      | Create a new table called faadata.performance and populate it using the data from the external table,** **public.gztable.
+
+faa=#** create table faadata.performance as**
+
+**    select * from public.gztable**
+
+**    distributed randomly;**
+
+<v:shape id="Picture_x0020_391" o:spid="_x0000_i1225" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML19483f6.PNG" style="width: 446pt; height: 89pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image313.png" o:title="SNAGHTML19483f6.PNG"></v:imagedata></v:shape>
+| 8.      | Exit the database.
+|  | **Summary**
+
+Data in files compressed with gzip or bzip2, can be loaded into Greenplum Database tables without uncompressing the files. This saves storage space on the host serving these files.
+|====
+
+End of Lab Exercise

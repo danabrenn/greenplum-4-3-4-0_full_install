@@ -1,0 +1,210 @@
+= 13. Table Partitioning
+
+
+
+|====
+|   
+
+**Purpose:** | The purpose of this lab is to learn about Greenplum’s partitioning capabilities. Partitioning is typically used on large fact tables to improve performance and manageability. Greenplum supports single level range and list partitioning. You will learn how to create and manage partitioned tables.
+| 
+| **Tasks:** | Students perform the following task: create and manage table partitions.
+| 
+| **References:** | Module 5 – Data Loading and Distribution
+
+·       Lesson: Table Partitioning
+|====
+
+|====
+| **Step** | **Action**
+| 1.      | Connect to the faa database as the gpadmin user, if not already connected:
+
+[gpadmin@mdw ~]$ **psql faa**
+| 2.      | Make sure that the partitioned tables feature is turned on. This allows the query planner to selectively scan table partitions at runtime. Confirm that constraint_exclusion has a value of **on**:
+
+faa=# **SHOW constraint_exclusion;**
+
+<v:shape id="Picture_x0020_392" o:spid="_x0000_i1224" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML196173f.PNG" style="width: 446pt; height: 107pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image314.png" o:title="SNAGHTML196173f.PNG"></v:imagedata></v:shape>
+| 3.      | Create a partitioned version of the fact table. Each month will be stored in a separate partition. The partitioned table will be based on the faadata.FactOnTimePerformance table created in an earlier lab.
+
+faa=# **CREATE TABLE faadata.factontimeperformance_parted**
+
+ **  (LIKE faadata.FactOnTimePerformance)**
+
+**DISTRIBUTED BY (AirlineID)**
+
+**PARTITION BY RANGE ( Year ) (**
+
+ **  START (2008)**
+
+ **  END (2011)**
+
+ **  EVERY (1)**
+
+**);**
+
+<v:shape id="Picture_x0020_393" o:spid="_x0000_i1223" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML198c098.PNG" style="width: 446pt; height: 195pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image315.png" o:title="SNAGHTML198c098.PNG"></v:imagedata></v:shape>
+| 4.      | List the tables:
+
+faa=# **\dt**
+
+<v:shape id="Picture_x0020_394" o:spid="_x0000_i1222" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML199af98.PNG" style="width: 464pt; height: 418pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image316.png" o:title="SNAGHTML199af98.PNG"></v:imagedata></v:shape>
+
+You should note that the faadata.factontimeperformance_parted table was created along with 3 child tables.
+| 5.      | Check the definition of one of the child tables:
+
+faa=# **\d+ faadata.factontimeperformance_parted_1_prt_1**
+
+<v:shape id="Picture_x0020_397" o:spid="_x0000_i1221" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML19e3367.PNG" style="width: 487pt; height: 187pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image317.png" o:title="SNAGHTML19e3367.PNG"></v:imagedata></v:shape>
+
+<v:shape id="Picture_x0020_398" o:spid="_x0000_i1220" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML19f2534.PNG" style="width: 487pt; height: 125pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image318.png" o:title="SNAGHTML19f2534.PNG"></v:imagedata></v:shape>
+
+You should see that the child table has the same structure as the parent table, but also includes a check constraint for the monthid.
+| 6.      | Load data into the partitioned table to verify that the partition scheme is working:
+
+faa=# **COPY faadata.FactOnTimePerformance_parted FROM        '/rawdata/FAAData/On_Time_On_Time_Performance_2008_1.csv'**
+
+**WITH DELIMITER ',' CSV HEADER QUOTE '"';**
+
+<v:shape id="Picture_x0020_399" o:spid="_x0000_i1219" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a28df5.PNG" style="width: 458pt; height: 88pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image319.png" o:title="SNAGHTML1a28df5.PNG"></v:imagedata></v:shape>
+
+**Note: **There is a** **double quote in the middle of two single quotes at the end of the line. The filename specified in the command is case sensitive.
+
+**Note:** You are loading data into the parent table, not the child table. If the partitioning is working correctly, Greenplum will place the data into the appropriate partition when data is inserted into the parent table.
+| 7.      | Verify that the data was copied into the correct partition:
+
+faa=# **SELECT COUNT(*)from faadata.FactOnTimePerformance_parted;**
+
+faa=# **SELECT COUNT(*)from faadata.FactOnTimePerformance_parted_1_prt_1;**
+
+**  
+**<v:shape id="Picture_x0020_400" o:spid="_x0000_i1218" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a309d8.PNG" style="width: 458pt; height: 167pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image320.png" o:title="SNAGHTML1a309d8.PNG"></v:imagedata></v:shape>
+
+**Note:** All of the records were placed into the first child partition table. If you query against any of the other child tables, you will find that they do not contain any rows.
+| 8.      | Load the January 2011 data into the same table:
+
+faa=# **COPY faadata.FactOnTimePerformance_parted FROM '/rawdata/FAAData/On_Time_On_Time_Performance_2011_1.csv'                                 WITH DELIMITER ',' CSV HEADER QUOTE '"';**
+
+<v:shape id="Picture_x0020_401" o:spid="_x0000_i1217" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a92850.PNG" style="width: 458pt; height: 119pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image321.png" o:title="SNAGHTML1a92850.PNG"></v:imagedata></v:shape>
+
+This operation should fail since the partition for 2011 has not been created yet. There is also no default partition to capture any data that does not fall into the range of any defined partitions.
+| 9.      | Create a new partition for the 2011 data:  
+** ALTER TABLE faadata.factontimeperformance_parted   
+  add partition Y2011  
+  START (smallint '2011')  
+  END (smallint '2012');**
+
+<v:shape id="Picture_x0020_402" o:spid="_x0000_i1216" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a9ea95.PNG" style="width: 458pt; height: 118pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image322.png" o:title="SNAGHTML1a9ea95.PNG"></v:imagedata></v:shape>
+| 10.   | Load the January 2011 data again:
+
+faa=# **COPY faadata.FactOnTimePerformance_parted FROM '/rawdata/FAAData/On_Time_On_Time_Performance_2011_1.csv'**
+
+**WITH DELIMITER ',' CSV HEADER QUOTE '"';**
+
+<v:shape id="Picture_x0020_403" o:spid="_x0000_i1215" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1aa92e4.PNG" style="width: 458pt; height: 87pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image323.png" o:title="SNAGHTML1aa92e4.PNG"></v:imagedata></v:shape>
+
+Note: The operation should now succeed.
+| 11.   | The table and partition names can be long and non-intuitive. Rename the table to factotperf:
+
+faa=# **ALTER TABLE factontimeperformance_parted RENAME TO factotperf;**
+
+<v:shape id="Picture_x0020_404" o:spid="_x0000_i1214" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1ab3f78.PNG" style="width: 458pt; height: 70pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image324.png" o:title="SNAGHTML1ab3f78.PNG"></v:imagedata></v:shape>
+| 12.   | Verify that the parent table and the child tables have been renamed:
+
+faa=# **\dt**
+
+
+
+<v:shape id="Picture_x0020_406" o:spid="_x0000_i1213" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1ac2e1a.PNG" style="width: 458pt; height: 374pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image325.png" o:title="SNAGHTML1ac2e1a.PNG"></v:imagedata></v:shape>
+| 13.   | Rename the 2008 partition so that it has a more intuitive name:
+
+faa=# **ALTER TABLE factotperf RENAME PARTITION for (2008) to Y2008;**
+
+<v:shape id="Picture_x0020_407" o:spid="_x0000_i1212" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1accd74.PNG" style="width: 458pt; height: 69pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image326.png" o:title="SNAGHTML1accd74.PNG"></v:imagedata></v:shape>
+| 14.   | Verify that the partition has been renamed:
+
+faa=#  **\dt  
+**<v:shape id="Picture_x0020_408" o:spid="_x0000_i1211" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1adb302.PNG" style="width: 458pt; height: 369pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image327.png" o:title="SNAGHTML1adb302.PNG"></v:imagedata></v:shape>
+| 15.   | You may need to remove a partition after a period of time to age out data. Drop the 2008 partition with the following command:
+
+faa=#  **ALTER TABLE factotperf DROP PARTITION FOR (2008);**
+
+<v:shape id="Picture_x0020_409" o:spid="_x0000_i1210" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1ae1887.PNG" style="width: 458pt; height: 82pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image328.png" o:title="SNAGHTML1ae1887.PNG"></v:imagedata></v:shape>
+| 16.   | Exchanging a partition allows you to bring data from a table into a partition. Create a table named fact_temp that has the same structure as factotperf. This table will contain the data that will eventually be placed into the partitioned table:
+
+faa=#  **CREATE TABLE fact_temp (LIKE factotperf);**
+
+<v:shape id="Picture_x0020_410" o:spid="_x0000_i1209" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1ae7ea9.PNG" style="width: 458pt; height: 89pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image329.png" o:title="SNAGHTML1ae7ea9.PNG"></v:imagedata></v:shape>
+| 17.   | Remove any existing data from the factotoperf table by truncating the table. This will truncate all partitions within the table.  
+faa=#  **TRUNCATE TABLE factotperf;**
+
+<v:shape id="Picture_x0020_411" o:spid="_x0000_i1208" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1aecdd2.PNG" style="width: 458pt; height: 69pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image330.png" o:title="SNAGHTML1aecdd2.PNG"></v:imagedata></v:shape>
+| 18.   | Copy the January 2011 data into fact_temp:
+
+faa=# **COPY faadata.fact_temp FROM '/rawdata/FAAData/On_Time_On_Time_Performance_2011_1.csv'**
+
+**WITH DELIMITER ',' CSV HEADER QUOTE '"';**
+
+<v:shape id="Picture_x0020_992" o:spid="_x0000_i1207" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1afb237.PNG" style="width: 458pt; height: 88pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image331.png" o:title="SNAGHTML1afb237.PNG"></v:imagedata></v:shape>
+| 19.   | Take the data found in the factotperf table and push it to the Y2011 partition using the EXCHANGE clause on the partition. This will also move the data that was in the partition to the fact_temp table:
+
+faa=# **ALTER TABLE factotperf EXCHANGE PARTITION Y2011 WITH TABLE fact_temp;**
+
+<v:shape id="Picture_x0020_995" o:spid="_x0000_i1206" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1be23ce.PNG" style="width: 458pt; height: 79pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image332.png" o:title="SNAGHTML1be23ce.PNG"></v:imagedata></v:shape>
+| 20.   | Verify that the data is now in the partitioned table and that the fact_temp table has no rows:
+
+faa=# **SELECT COUNT(*) FROM factotperf;**
+
+faa=# **SELECT COUNT(*) FROM fact_temp;**
+
+<v:shape id="Picture_x0020_996" o:spid="_x0000_i1205" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1c02303.PNG" style="width: 458pt; height: 167pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image333.png" o:title="SNAGHTML1c02303.PNG"></v:imagedata></v:shape>
+| 21.   | Sometimes a partition may become too large and it might be worthwhile to split the partition. Create a new partitioned table:
+
+faa=# **CREATE TABLE ORDERS(ordered int, orderDate date)**
+
+**DISTRIBUTED BY (ordered)**
+
+**PARTITION BY RANGE (orderDate)**
+
+**(START ('2008-01-01')**
+
+ ** END ('2008-12-31')**
+
+ ** EVERY (INTERVAL '1 month')**
+
+**);**
+
+<v:shape id="Picture_x0020_997" o:spid="_x0000_i1204" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1c3ae51.PNG" style="width: 458pt; height: 5in; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image334.png" o:title="SNAGHTML1c3ae51.PNG"></v:imagedata></v:shape>
+| 22.   | Split the January partition into two parttions:
+
+faa=# **ALTER TABLE orders**
+
+**SPLIT PARTITION FOR ('2008-01-01')**
+
+**AT ('2008-01-16')**
+
+**INTO (PARTITION jan20081to15, PARTITION jan200816to31);**
+
+<v:shape id="Picture_x0020_998" o:spid="_x0000_i1203" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1c41750.PNG" style="width: 458pt; height: 138pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image335.png" o:title="SNAGHTML1c41750.PNG"></v:imagedata></v:shape>
+| 23.   | Verify that the new partitions have been created:
+
+faa-# **\dt**
+
+<v:shape id="Picture_x0020_999" o:spid="_x0000_i1202" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1c4dfad.PNG" style="width: 469pt; height: 239pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image336.png" o:title="SNAGHTML1c4dfad.PNG"></v:imagedata></v:shape>
+
+Exit the database before proceeding.
+|  | **Summary**
+
+Table partitioning addresses the problem of supporting very large tables, such as fact tables, by allowing you to logically divide them into smaller and more manageable pieces. Partitioning is used to improve performance by scanning only the relevant data needed to satisfy a query. It can also facilitate database loading and maintenance.
+
+In the Greenplum Database, partitioning is a procedure that creates multiple sub-tables (or child tables) from a single large table (or parent table) and setting exclusion constraints on the child tables. Table data resides in the child tables only; no data should be loaded in the parent tables. Note that partitioned tables in the Greenplum Database are also physically distributed across the segment instances just as are non-partitioned tables.
+
+The ALTER TABLE syntax for handling partitions is very flexible. It allows almost as much control over the structure of a table as the CREATE TABLE syntax. With this one command you are given the ability to add partitions, drop partitions, and rename partitions. Remember that if you drop a partition, it will remove the partition and all dependents.
+
+Exchanging a partition is an easy way to facilitate tricky operations that with other databases would require locking out the users or running late at night so as not to interfere with work. By running a load on a table that is not being used, and then quickly exchanging it once the load is finished, you can see more data security and less downtime. The advantages of exchanging a partition do not end there.
+
+The alter table syntax can be used to split a partition if the partition is growing too large. To use this command, you must split your partition on the partitioning key. The value specified will land in the latter of the two partition tables created.
+|====
+
+
+
+End of Lab Exercise

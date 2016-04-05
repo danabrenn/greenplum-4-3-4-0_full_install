@@ -1,0 +1,147 @@
+= 21. Indexing Strategies
+
+
+
+|====
+|   
+
+**Purpose:** | In this lab, you determine requirements for secondary indexes on the fact table TRANSACTION. You will then create the secondary indexes.
+| 
+| **Tasks:** | Students perform the following task: Create indexes to support queries
+| 
+| **References:** | Module 8 – Performance Analysis and Tuning
+
+·       Lesson: Indexing Strategies
+|====
+
+
+|====
+| **Step** | **Action**
+| 1.      | Here are some facts that you can use to develop your index strategies:
+
+·       Store managers often query the transaction table for their store(s) using the storeid.
+
+·       Business Intelligence (BI) tools execute a lot of queries for stores and customers by state for one or more states.
+
+·       One of the executive dashboards queries transactions at stores based on the store feature grocery.
+
+·       Auditing directly accesses transactions by the transaction id.
+
+Use the following matrix to determine which indexes you need to build to support the above analysis. A list of the tables that require indexes has been provided:
+<table class="LightList-Accent11" border="1" cellspacing="0" cellpadding="0" style="border-collapse: collapse; border: none;"><tbody><tr><td width="130" style="width: 130.3pt; border-style: solid none none solid; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt; background: rgb(79, 129, 189);">
+**Table Name**
+</td><td width="130" style="width: 130.3pt; border-style: solid solid none; border-top-color: rgb(79, 129, 189); border-right-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-right-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt; background: rgb(79, 129, 189);">
+**Column(s)**
+</td><td width="130" style="width: 130.35pt; border-style: solid solid none none; border-top-color: rgb(79, 129, 189); border-top-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt; background: rgb(79, 129, 189);">
+**Index Type**
+</td></tr><tr><td width="130" style="width: 130.3pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt;">
+**transaction**
+</td><td width="130" style="width: 130.3pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt;">
+
+</td><td width="130" style="width: 130.35pt; border-style: solid solid solid none; border-top-color: rgb(79, 129, 189); border-right-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-top-width: 1pt; border-right-width: 1pt; border-bottom-width: 1pt; padding: 0in 5.4pt;">
+
+</td></tr><tr><td width="130" style="width: 130.3pt; border-style: none none none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt;">
+**store**
+</td><td width="130" style="width: 130.3pt; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt;">
+
+</td><td width="130" style="width: 130.35pt; border-style: none solid none none; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt;">
+
+</td></tr><tr><td width="130" style="width: 130.3pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt;">
+**customer**
+</td><td width="130" style="width: 130.3pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt;">
+
+</td><td width="130" style="width: 130.35pt; border-style: solid solid solid none; border-top-color: rgb(79, 129, 189); border-right-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-top-width: 1pt; border-right-width: 1pt; border-bottom-width: 1pt; padding: 0in 5.4pt;">
+
+</td></tr><tr><td width="130" style="width: 130.3pt; border-style: none none none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; padding: 0in 5.4pt;">
+**store**
+</td><td width="130" style="width: 130.3pt; border-style: none solid; border-left-color: rgb(79, 129, 189); border-left-width: 1pt; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt;">
+
+</td><td width="130" style="width: 130.35pt; border-style: none solid none none; border-right-color: rgb(79, 129, 189); border-right-width: 1pt; padding: 0in 5.4pt;">
+
+</td></tr><tr><td width="130" style="width: 130.3pt; border-style: solid none solid solid; border-top-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-left-color: rgb(79, 129, 189); border-top-width: 1pt; border-bottom-width: 1pt; border-left-width: 1pt; padding: 0in 5.4pt;">
+**transaction**
+</td><td width="130" style="width: 130.3pt; border: 1pt solid rgb(79, 129, 189); padding: 0in 5.4pt;">
+
+</td><td width="130" style="width: 130.35pt; border-style: solid solid solid none; border-top-color: rgb(79, 129, 189); border-right-color: rgb(79, 129, 189); border-bottom-color: rgb(79, 129, 189); border-top-width: 1pt; border-right-width: 1pt; border-bottom-width: 1pt; padding: 0in 5.4pt;">
+
+</td></tr></tbody></table>
+ | **Table Name** | **Column(s)** | **Index Type** | **transaction** |  |  | **store** |  |  | **customer** |  |  | **store** |  |  | **transaction** |  | 
+| **Table Name** | **Column(s)** | **Index Type**
+| **transaction** |  | 
+| **store** |  | 
+| **customer** |  | 
+| **store** |  | 
+| **transaction** |  | 
+| 2.      | Connect to the datamart database as gpadmin.
+| 3.      | Using the CREATE INDEX statement syntax, create the above indexes for your database. Note that to index the transactions table, you will need to index each of the child tables.
+
+The sample script, /home/gp/sql/load_files/adv_sql_files/lab7createidx.sql, can be used for guidance.
+
+Execute the query file:
+
+datamart=# **\i /home/gp/sql/load_files/adv_sql_files/lab7createidx.sql**
+
+<v:shape id="Picture_x0020_1194" o:spid="_x0000_i1047" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a030196.PNG" style="width: 458pt; height: 275pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image491.png" o:title="SNAGHTML3a030196.PNG"></v:imagedata></v:shape>
+| 4.      | ANALYZE your database tables with new indexes:
+
+**1. **Analyze the facts.transaction table:  
+datamart=#** ANALYZE facts.transaction;**
+
+**2. **Analyze the dimensions.store table:  
+datamart=#** ANALYZE dimensions.store;**
+
+**3. **Analyze the dimensions.customer table:  
+datamart=#** ANALYZE dimensions.customer;**
+
+<v:shape id="Picture_x0020_1195" o:spid="_x0000_i1046" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a04f4ba.PNG" style="width: 458pt; height: 104pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image492.png" o:title="SNAGHTML3a04f4ba.PNG"></v:imagedata></v:shape>
+| 5.      | Determine if your indexes are being used by the optimizer by running the EXPLAIN utility with some simple queries that should use the index.
+
+If the indexes are not being used, it is likely because of the small size of the data set. Try changing theenable_seqscan configuration parameter to off if that is the case. Re-execute the EXPLAIN queries and then execute the queries. Be sure to set enable_seqscan back to on before exiting psql. Execute an EXPLAIN against a query:
+
+datamart=# **EXPLAIN**
+
+**SELECT * FROM dimensions.store ds, facts.transaction ft**
+
+**where ds.storeid=ft.storeid;**
+
+<v:shape id="Picture_x0020_1197" o:spid="_x0000_i1045" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a05668f.PNG" style="width: 458pt; height: 241pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image493.png" o:title="SNAGHTML3a05668f.PNG"></v:imagedata></v:shape>
+| 6.      | Disable sequential scans:
+
+datamart=# **set enable_seqscan=off;**
+
+<v:shape id="Picture_x0020_1199" o:spid="_x0000_i1044" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a069656.PNG" style="width: 458pt; height: 68pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image494.png" o:title="SNAGHTML3a069656.PNG"></v:imagedata></v:shape>
+| 7.      | Execute EXPLAIN against the query again:
+
+datamart=# **EXPLAIN**
+
+**SELECT * FROM dimensions.store ds, facts.transaction ft**
+
+**where ds.storeid=ft.storeid;**
+
+<v:shape id="Picture_x0020_1212" o:spid="_x0000_i1043" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a072ae7.PNG" style="width: 458pt; height: 271pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image495.png" o:title="SNAGHTML3a072ae7.PNG"></v:imagedata></v:shape>
+| 8.      | Set enable_seqscan to on:
+
+datamart=# **set enable_seqscan=on;**
+
+<v:shape id="Picture_x0020_1260" o:spid="_x0000_i1042" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a0791a5.PNG" style="width: 458pt; height: 68pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image496.png" o:title="SNAGHTML3a0791a5.PNG"></v:imagedata></v:shape>
+| 9.      | Execute EXPLAIN against the query again:
+
+datamart=# **EXPLAIN**
+
+**SELECT * FROM dimensions.store ds, facts.transaction ft**
+
+**where ds.storeid=ft.storeid;**
+
+<v:shape id="Picture_x0020_1261" o:spid="_x0000_i1041" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a081b4d.PNG" style="width: 458pt; height: 252pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image497.png" o:title="SNAGHTML3a081b4d.PNG"></v:imagedata></v:shape>
+|  | **Summary**
+
+In most traditional databases, indexes can greatly improve data access times. However, in a distributed database such as Greenplum, indexes should be used more sparingly. The Greenplum Database is very fast at sequential scanning. Indexes use a random seek pattern to locate records on disk. Also, unlike a traditional database, the data is distributed across the segments. This means each segment scans a smaller portion of the overall data in order to get the result. If using table partitioning, the total data to scan may be even a fraction of that.
+
+Greenplum recommends that you first try your query workload without adding any additional indexes. Indexes are more likely to improve performance for OLTP type workloads, where the query is returning a single record or a very small data set. Typically, a business intelligence (BI) query workload returns very large data sets, and thus does not make efficient use of indexes.
+
+Note that the Greenplum Database will automatically create PRIMARY KEY indexes for tables with primary keys. If you are experiencing unsatisfactory performance, you may try adding indexes to see if performance improves.
+|====
+
+
+
+End of Lab Exercise

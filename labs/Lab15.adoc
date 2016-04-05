@@ -1,0 +1,617 @@
+= 15. Backups and Restores
+
+
+
+|====
+|   
+
+**Purpose:** | In this lab, you will schedule a parallel backup operation with the gpcrondump command to dump the faa database. This will create a backup file of the master instance and each active segment instance in the Greenplum Database system.
+
+By default, the dump files are created in the data directory of their respective segment instance or master instance. In this exercise, you will redirect the dump files to one location to make it easier to collect and analyze them.
+
+You will then restore the database using thegprestoredb command.
+| 
+| **Tasks:** | Students perform the following task:
+
+·       Create and retrieve backups
+
+·       Perform incremental backups and restores
+
+·       Recover from a failed master
+| 
+| **References:** | Module 6: Database Management and Archiving
+
+·       Lesson: Backups and Restores
+|====
+
+
+|====
+| **Step** | **Action**
+|  | To create backups you will need a place to keep them. Sometimes it is a network share to a backup devise. Normally all segments will need to have this space. You can perform backups as parallel or non-parallel backups using the following:
+
+·       gpcrondump for automatic scheduled parallel backups.
+
+·       pg_dump non parallel backup that has to go through the master. (Not recommended because of slow performance) pg_dump and pg_restore is available for compatibility with standard postgres databases.
+| 1.      | Start an ad-hoc backup from the UNIX prompt as gpadmin: 
+
+[gpadmin@mdw ~]$ **gpcrondump faa**
+
+<v:shape id="Picture_x0020_309" o:spid="_x0000_i1181" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15cdcafe.PNG" style="width: 458pt; height: 445pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image357.png" o:title="SNAGHTML15cdcafe.PNG"></v:imagedata></v:shape>
+
+You will be prompted to continue. Type y and press Enter to proceed.
+|  | <v:shape id="Picture_x0020_319" o:spid="_x0000_i1180" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15cf258c.PNG" style="width: 458pt; height: 652pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image358.png" o:title="SNAGHTML15cf258c.PNG"></v:imagedata></v:shape>
+| 2.      | The backup files will be in the data/db_dumps directory on the master and all primary segments.
+
+[gpadmin@mdw ~]$ **ls -aR $MASTER_DATA_DIRECTORY/db_dumps**
+
+<v:shape id="Picture_x0020_353" o:spid="_x0000_i1179" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15de4700.PNG" style="width: 458pt; height: 195pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image359.png" o:title="SNAGHTML15de4700.PNG"></v:imagedata></v:shape>
+
+All backup files are stored in a timestamped directory for the day that the backup was started. In this example, the directory, 20150330, is created when the first backup is executed on March 30^th^, 2015. Any subsequent backups performed on that day are stored to the same directory.
+| 3.      | Verify the corresponding backup files exist for the segments.
+
+[gpadmin@mdw ~]$ **gpssh -h sdw1 -h sdw2 \  
+ls -aR /data/primary/gpseg*/db_dumps**
+
+<v:shape id="Picture_x0020_363" o:spid="_x0000_i1178" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15e5a298.PNG" style="width: 458pt; height: 191pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image360.png" o:title="SNAGHTML15e5a298.PNG"></v:imagedata></v:shape>
+| 4.      | Over the next few steps, you will configure the environment so that gpcrondump is automated through cron.
+
+The crontab utility determines whether or not a user has appropriate permission to run a program at a particular point in time by checking the file /etc/cron.allow. A user must be explicitly included to this file to be able to use the crontab.
+
+As root, add the gpadmin account to the /etc/cron.allow file in a line by itself. In this example, the catcommand is used to add a line to the end of the file. If the file does not exist, it will be created. If it does exist, the double greater than symbols (>>) lets you append to the file.
+
+<v:shape id="Picture_x0020_389" o:spid="_x0000_i1177" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15e9056f.PNG" style="width: 458pt; height: 89pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image361.png" o:title="SNAGHTML15e9056f.PNG"></v:imagedata></v:shape>
+
+To finish modifying the file with the cat command, hit CTRL-D.
+| 5.      | Exit from the root account, back to the gpadmin account.
+
+[root@mdw ~]# **exit**
+
+<v:shape id="Picture_x0020_395" o:spid="_x0000_i1176" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15ec41b4.PNG" style="width: 458pt; height: 53pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image362.png" o:title="SNAGHTML15ec41b4.PNG"></v:imagedata></v:shape>
+| 6.      | Ensure that the permissions of .bash_profile file for the gpadmin user include the execute permission so thatcron can properly access and execute the login script:
+
+[gpadmin@mdw ~]$ **chmod +x /home/gpadmin/.bash_profile**
+
+<v:shape id="Picture_x0020_396" o:spid="_x0000_i1175" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15ee3268.PNG" style="width: 458pt; height: 60pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image363.png" o:title="SNAGHTML15ee3268.PNG"></v:imagedata></v:shape>
+| 7.      | Using vi, add the following lines to the file /home/gpadmin/cronbackup.sh:
+
+**source /home/gpadmin/.bash_profile**  
+**gpcrondump -x faa -c -g -G -a -q >> /tmp/gpcrondump.log**
+
+<v:shape id="Picture_x0020_405" o:spid="_x0000_i1174" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15f09899.PNG" style="width: 458pt; height: 78pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image364.png" o:title="SNAGHTML15f09899.PNG"></v:imagedata></v:shape>
+| 8.      | Change the permissions on **cronbackup.sh** to **755** so that it is readable and executable by cron.
+
+[gpadmin@mdw ~]$ **chmod 755 cronbackup.sh**
+
+<v:shape id="Picture_x0020_412" o:spid="_x0000_i1173" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15f10acc.PNG" style="width: 458pt; height: 70pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image365.png" o:title="SNAGHTML15f10acc.PNG"></v:imagedata></v:shape>
+| 9.      | Update the **EDITOR** environment variable to **vi** and export it. When modifying your cron jobs, the editor defined by the EDITOR variable will be used. If you are more familiar with and prefer to use Emacs, you can replace vi shown here with emacs:
+
+[gpadmin@mdw ~]$ **export EDITOR=vi**<v:shape id="Picture_x0020_413" o:spid="_x0000_i1172" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15f22944.PNG" style="width: 458pt; height: 59pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image366.png" o:title="SNAGHTML15f22944.PNG"></v:imagedata></v:shape>
+| 10.   | You will set cron to execute the script you created, cronbackup.sh, five (5) minutes from the time you record in this step. Use the date command to obtain the current time:
+
+[gpadmin@mdw ~]$ **date**
+
+<v:shape id="Picture_x0020_414" o:spid="_x0000_i1171" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15f351f9.PNG" style="width: 458pt; height: 70pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image367.png" o:title="SNAGHTML15f351f9.PNG"></v:imagedata></v:shape>
+| 11.   | Edit the crontab and add a line to execute the script you created, cronbackup.sh, five minutes from the time you recorded earlier:
+
+[gpadmin@mdw ~]$ **crontab -e**
+
+<v:shape id="Picture_x0020_415" o:spid="_x0000_i1170" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15f4c074.PNG" style="width: 458pt; height: 56pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image368.png" o:title="SNAGHTML15f4c074.PNG"></v:imagedata></v:shape>
+
+The syntax below is used to show how each crontab line is defined:
+
+**17 6 * * * /home/gpadmin/cronbackup.sh**
+
+----
+*   * * * *  command to be executed
+----
+
+----
+-   - - - -
+----
+
+----
+|   | | | |
+----
+
+----
+|   | | | |
+----
+
+----
+|   | | | +----- day of week (0 - 7) (Sunday=0 or 7)
+----
+
+----
+|   | | +---------- month (1 - 12)
+----
+
+----
+|   | +--------------- day of month (1 - 31)
+----
+
+----
+|   +-------------------- hour (0 - 23)
+----
+
+----
++------------------------- min (0 - 59)
+----
+
+
+
+Save your changes and exit the editor. Once you have modified your crontab, you should receive a message that a new crontab is being installed.
+
+<v:shape id="Picture_x0020_993" o:spid="_x0000_i1169" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15f78e5d.PNG" style="width: 458pt; height: 78pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image369.png" o:title="SNAGHTML15f78e5d.PNG"></v:imagedata></v:shape>
+| 12.   | Wait for the time to pass for the job to execute and look for the backup files. Execute the following commands where you should see a second set of backups with a new timestamp:
+
+[gpadmin@mdw ~]$ **ls -a $MASTER_DATA_DIRECTORY/db_dumps/***
+
+[gpadmin@mdw ~]$ **gpssh -h sdw1 -h sdw2 \**
+
+**ls -aR /data/primary/gpseg*/db_dumps**
+
+<v:shape id="Picture_x0020_1000" o:spid="_x0000_i1168" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1605648f.PNG" style="width: 458pt; height: 449pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image370.png" o:title="SNAGHTML1605648f.PNG"></v:imagedata></v:shape>
+
+If the backup did not execute because time passed before you saved the crontab, you can execute the/home/gpadmin/cronbackup.sh script manually with the command,   
+/bin/bash /home/gpadmin/cronbackup.sh.
+
+Do not move to the next step until the backup process has completed.
+| 13.   | Over the next few steps, you will recover the database from the backup you created.
+
+Connect to the gpadmin database as the gpadmin user, if not already connected:
+
+[gpadmin@mdw ~]$ **psql**
+
+Rename the faa database:
+
+gpadmin=# **ALTER DATABASE faa rename to faa1;**
+
+<v:shape id="Picture_x0020_1002" o:spid="_x0000_i1167" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML160a1e7b.PNG" style="width: 458pt; height: 108pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image371.png" o:title="SNAGHTML160a1e7b.PNG"></v:imagedata></v:shape>
+| 14.   | Recreate the faa database. You will use this database to recover the data stored in the backup you created.
+
+gpadmin=# **CREATE DATABASE faa;**
+
+<v:shape id="Picture_x0020_1003" o:spid="_x0000_i1166" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML160b2fba.PNG" style="width: 458pt; height: 67pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image372.png" o:title="SNAGHTML160b2fba.PNG"></v:imagedata></v:shape>
+
+Connect to the faa database you created and list the tables in the database:  
+gpadmin=# **\c faa**  
+faa=# **\dt**
+
+<v:shape id="Picture_x0020_1004" o:spid="_x0000_i1165" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML160c9fbb.PNG" style="width: 458pt; height: 91pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image373.png" o:title="SNAGHTML160c9fbb.PNG"></v:imagedata></v:shape>
+| 15.   | Exit your PSQL session.
+| 16.   | Restore the faa database from the last backup taken. By not including the key identifier for the backupset,gpdbrestore will use the last available backup created to perform the restore operation.
+
+Execute the gpdbrestore command to restore the faa database:
+
+[gpadmin@mdw ~]$ **gpdbrestore -s faa**
+
+<v:shape id="Picture_x0020_1005" o:spid="_x0000_i1164" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML160e23c9.PNG" style="width: 458pt; height: 407pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image374.png" o:title="SNAGHTML160e23c9.PNG"></v:imagedata></v:shape>
+
+When prompted, type **y** and press Enter.
+
+The procedure may take a few minutes to complete.
+|  | <v:shape id="Picture_x0020_1007" o:spid="_x0000_i1163" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML161ac2a6.PNG" style="width: 458pt; height: 127pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image375.png" o:title="SNAGHTML161ac2a6.PNG"></v:imagedata></v:shape>
+
+**Note:** gpdbrestore –s database_name option looks for the latest set of dump files for the given database name in the segment data directories db_dumps directory on the Greenplum Database array of hosts.
+| 17.   | Verify the database has been restored by listing tables from the faa database.
+
+[gpadmin@mdw ~]$ **psql faa**
+
+faa=# **ALTER DATABASE faa SET search_path TO faadata, public, pg_catalog;**
+
+faa=# **\c faa                                                           **
+
+faa=#** \dt**
+
+
+
+<v:shape id="Picture_x0020_1008" o:spid="_x0000_i1162" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML161c4f6b.PNG" style="width: 458pt; height: 134pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image376.png" o:title="SNAGHTML161c4f6b.PNG"></v:imagedata></v:shape>
+
+<v:shape id="Picture_x0020_1009" o:spid="_x0000_i1161" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML161ca2e7.PNG" style="width: 458pt; height: 223pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image377.png" o:title="SNAGHTML161ca2e7.PNG"></v:imagedata></v:shape>
+| 18.   | Exit the database before proceeding.
+|====
+
+
+
+
+
+
+
+|====
+| **Step** | **Action**
+| 1.      | Execute the command below to create two tables in the dbbackup** **database. The first will be a regular table calleddimairline, while the second is an append-only table called dimairline_image.
+
+[gpadmin@mdw ~]$** psql -f /rawdata/FAAData/CreateDbBackupTables.sql \  
+dbbackup**
+
+<v:shape id="Picture_x0020_1010" o:spid="_x0000_i1160" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML161fdb16.PNG" style="width: 458pt; height: 2in; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image378.png" o:title="SNAGHTML161fdb16.PNG"></v:imagedata></v:shape>
+
+The error is displayed only if the table did not previously exist. The table will be created thereafter.
+| 2.      | Start a psql session by connecting to the** **dbbackup** **database.
+
+[gpadmin@mdw ~]$** psql dbbackup**
+
+<v:shape id="Picture_x0020_994" o:spid="_x0000_i1159" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML162c4a5c.PNG" style="width: 458pt; height: 86pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image379.png" o:title="SNAGHTML162c4a5c.PNG"></v:imagedata></v:shape>
+| 3.      | List the available tables on this database by using the command \dt as shown:
+
+dbbackup=# **\dt dimairline***
+
+<v:shape id="Picture_x0020_1001" o:spid="_x0000_i1158" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML162cbf6c.PNG" style="width: 458pt; height: 128pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image380.png" o:title="SNAGHTML162cbf6c.PNG"></v:imagedata></v:shape>
+| 4.      | Verify how many records the tables have by running the commands below.
+
+dbbackup=# **select count(*) from dimairline;**
+
+dbbackup=# **select count(*) from dimairline_image;**
+
+<v:shape id="Picture_x0020_1011" o:spid="_x0000_i1157" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML162d3b10.PNG" style="width: 458pt; height: 167pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image381.png" o:title="SNAGHTML162d3b10.PNG"></v:imagedata></v:shape>
+
+**Note: ** Both tables contain 1,540 records.
+| 5.      | Exit the database before proceeding.
+| 6.      | Run a full backup using the following command:
+
+[gpadmin@mdw ~]$** gpcrondump -x dbbackup**
+
+<v:shape id="Picture_x0020_1012" o:spid="_x0000_i1156" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML16309715.PNG" style="width: 458pt; height: 407pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image382.png" o:title="SNAGHTML16309715.PNG"></v:imagedata></v:shape>
+
+Respond with **y** when prompted to continue.
+| 7.      | Connect to the dbbackup database as gpadmin and populate the append-only dimairline_image table, as shown:
+
+[gpadmin@mdw ~]$** psql dbbackup**
+
+dbbackup=#** COPY backupdata.DimAirline_image FROM**
+
+**'/rawdata/FAAData/DimAIRLINES.csv'**
+
+**WITH DELIMITER ',' CSV HEADER QUOTE '"';**
+
+<v:shape id="Picture_x0020_1013" o:spid="_x0000_i1155" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1631b58d.PNG" style="width: 458pt; height: 127pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image383.png" o:title="SNAGHTML1631b58d.PNG"></v:imagedata></v:shape>
+| 8.      | Verify the number of records both the dimairline and dimairline_image tables have by executing the following commands:
+
+dbbackup=#** select count(*) from dimairline;**
+
+dbbackup=#** select count(*) from dimairline_image;**
+
+<v:shape id="Picture_x0020_1014" o:spid="_x0000_i1154" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML16326b44.PNG" style="width: 458pt; height: 164pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image384.png" o:title="SNAGHTML16326b44.PNG"></v:imagedata></v:shape>
+
+**Note:** The table dimairline_image now contains 3,080 records.
+| 9.      | Exit the database and start an incremental backup for the dbbackup database.
+
+dbbackup=# **\q**
+
+[gpadmin@mdw ~]$ **gpcrondump -x dbbackup --incremental**
+
+<v:shape id="Picture_x0020_1015" o:spid="_x0000_i1153" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1632eb4c.PNG" style="width: 458pt; height: 418pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image385.png" o:title="SNAGHTML1632eb4c.PNG"></v:imagedata></v:shape>
+
+Respond with **y** when prompted to continue.
+
+
+| 10.   | <v:shape id="Picture_x0020_1017" o:spid="_x0000_i1152" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML16358d07.PNG" style="width: 458pt; height: 466pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image386.png" o:title="SNAGHTML16358d07.PNG"></v:imagedata></v:shape>** Note:** The incremental backup provides a Dump key as shown that should be used to restore the incremental backup.
+
+Record the dump key here:
+
+______________________________________________________________________________
+| 11.   | Connect to the dbbackup database and truncate the dimairline and dimairline_image tables.
+
+[gpadmin@mdw ~]$ **psql dbbackup**
+
+dbbackup=# **truncate table dimairline;**
+
+dbbackup=# **truncate table dimairline_image;**
+
+<v:shape id="Picture_x0020_1018" o:spid="_x0000_i1151" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1636b281.PNG" style="width: 458pt; height: 125pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image387.png" o:title="SNAGHTML1636b281.PNG"></v:imagedata></v:shape>
+| 12.   | Verify the number of records in the tables:
+
+dbbackup=# **select count(*) from dimairline;**
+
+dbbackup=# **select count(*) from dimairline_image;**
+
+<v:shape id="Picture_x0020_1019" o:spid="_x0000_i1150" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1637767b.PNG" style="width: 458pt; height: 167pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image388.png" o:title="SNAGHTML1637767b.PNG"></v:imagedata></v:shape>
+| 13.   | Exit the database and execute the gpdbrestore command to recover the tables.
+
+dbbackup=# **\q**
+
+[gpadmin@mdw ~]$ **gpdbrestore -t 20150330150138**
+
+Replace the dump key shown here with the dump key you recorded earlier.
+
+<v:shape id="Picture_x0020_1020" o:spid="_x0000_i1149" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1638e5ff.PNG" style="width: 458pt; height: 343pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image389.png" o:title="SNAGHTML1638e5ff.PNG"></v:imagedata></v:shape>
+
+Respond with **y** when prompted to continue.
+|  | <v:shape id="Picture_x0020_1022" o:spid="_x0000_i1148" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1639bf2e.PNG" style="width: 458pt; height: 244pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image390.png" o:title="SNAGHTML1639bf2e.PNG"></v:imagedata></v:shape>
+| 14.   | Access the dbbackup database and verify the number of records the tables contain by executing the following commands:
+
+[gpadmin@mdw ~]$ **psql dbbackup**
+
+dbbackup=# **select count(*) from dimairline;**
+
+dbbackup=# **select count(*) from dimairline_image;**
+
+<v:shape id="Picture_x0020_1023" o:spid="_x0000_i1147" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML163a8d45.PNG" style="width: 458pt; height: 167pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image391.png" o:title="SNAGHTML163a8d45.PNG"></v:imagedata></v:shape>
+| 15.   | Exit the database before proceeding.
+|  | **Summary**
+
+Backups are typically automated with gpcrondump, which is a wrapper for gp_dump andpg_dumpall.
+
+The gpcrondump utility dumps the contents of a Greenplum Database into SQL utility files, which can then be used to restore the database schema and user data at a later time using gpdbrestore.
+
+Keep in mind that a database in the Greenplum Database is actually comprised of several PostgreSQL instances (the master and all active segments), each of which must be dumped individually. Thegpcrondump utility takes care of dumping all of the individual instances across the system.
+
+Note that the 14 digit timestamp is the number that uniquely identifies the backup job, and is part of the filename for each dump file created by a gp_dump operation. This timestamp must be passed to thegpdbrestore utility when restoring a Greenplum Database.
+
+Incremental backups let you backup append-only tables if a change has been made to the table or its contents. The --incremental option to the gpcrondump command lets you take advantage of the space-saving features that come with performing incremental backups on your tables. Restoring from an incremental backup requires that you have all backups from the last full backup.
+|====
+
+
+
+
+
+
+
+
+
+|====
+| **Step** | **Action**
+|  | **Task Overview**
+
+Your standby server has been installed and configured during the installation of the Greenplum software.
+
+You will perform the following steps:
+
+·       Failover to the standby server
+
+·       Verify the Greenplum state operating with standby server
+
+·       Failback to the master server
+| 1.      | Before proceeding, verify that the standby server is properly configured.
+
+If not already connected, log in as root and switch user to gpadmin on your master server.
+
+Verify the file /etc/hosts** **on** **the master and standby servers contain the same content.
+
+[gpadmin@mdw ~]$ **cat /etc/hosts**
+
+<v:shape id="Picture_x0020_1016" o:spid="_x0000_i1146" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a3fe76b.PNG" style="width: 458pt; height: 146pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image392.png" o:title="SNAGHTML1a3fe76b.PNG"></v:imagedata></v:shape>
+
+[gpadmin@mdw ~]$ **gpssh -h smdw -e 'cat  /etc/hosts'**
+
+<v:shape id="Picture_x0020_1021" o:spid="_x0000_i1145" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a405441.PNG" style="width: 458pt; height: 158pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image393.png" o:title="SNAGHTML1a405441.PNG"></v:imagedata></v:shape>
+| 2.      | Verify the contents of the** **.bash_profile** **file on the standby mastser server are the same as the .bash_profilefile on the master server for the gpadmin user.
+
+[gpadmin@mdw ~]$ **gpssh -h mdw -h smdw -e 'cat  ~/.bash_profile'**
+
+<v:shape id="Picture_x0020_103" o:spid="_x0000_i1144" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a496706.PNG" style="width: 458pt; height: 507pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image394.png" o:title="SNAGHTML1a496706.PNG"></v:imagedata></v:shape>
+
+As Command Center has not been configured to run on the standby server, you do not have to make changes to the/home/gpadmin/.bash_profile file to include it.  All other changes reflecting the Greenplum Database must be the same.
+| 3.      | Verify that you can ssh to both segment servers from the standby server.
+
+Open a new terminal connection to the standby server, smdw.
+
+Connect to the standby server first. Login as root and switch to the gpadmin user account.
+
+<v:shape id="Picture_x0020_106" o:spid="_x0000_i1143" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a50b43b.PNG" style="width: 458pt; height: 90pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image395.png" o:title="SNAGHTML1a50b43b.PNG"></v:imagedata></v:shape>
+
+
+| 4.      | From the terminal session where you have connected to the standby server, connect to the first segment server, sdw1.
+
+[gpadmin@smdw ~]$ **ssh sdw1**
+
+<v:shape id="Picture_x0020_109" o:spid="_x0000_i1142" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a51adb6.PNG" style="width: 458pt; height: 70pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image396.png" o:title="SNAGHTML1a51adb6.PNG"></v:imagedata></v:shape>
+
+Exit from the first segment server and connect to the second segment server, sdw2.
+
+[gpadmin@sdw1 ~]$ **exit**
+
+[gpadmin@smdw ~]$ **ssh sdw2**
+
+<v:shape id="Picture_x0020_112" o:spid="_x0000_i1141" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a525431.PNG" style="width: 458pt; height: 101pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image397.png" o:title="SNAGHTML1a525431.PNG"></v:imagedata></v:shape>
+
+Exit from the second segment server, sdw2.
+
+[gpadmin@sdw2 ~]$ **exit**
+
+<v:shape id="Picture_x0020_118" o:spid="_x0000_i1140" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a52bb4d.PNG" style="width: 458pt; height: 82pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image398.png" o:title="SNAGHTML1a52bb4d.PNG"></v:imagedata></v:shape>
+| 5.      | Before initiating a failover, verify the state of the master to standby server to ensure that the database is synchronized. To verify the state, execute the following command on the master server, mdw:
+
+[gpadmin@mdw ~]$ **gpstate -f**
+
+<v:shape id="Picture_x0020_121" o:spid="_x0000_i1139" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a56fb58.PNG" style="width: 458pt; height: 459pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image399.png" o:title="SNAGHTML1a56fb58.PNG"></v:imagedata></v:shape>
+| 6.      | To safeguard against incidents that may occur in your lab environment, create a backup of all databases in the environment. You will create a backup of all databases except template0, template1, and postgres.
+
+First, obtain the list of databases in the environment. The highlighted databases will be backed up.
+
+[gpadmin@mdw ~]$ **psql -l**
+
+<v:shape id="Picture_x0020_1187" o:spid="_x0000_i1138" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1ab95fc7.PNG" style="width: 458pt; height: 253pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image400.png" o:title="SNAGHTML1ab95fc7.PNG"></v:imagedata></v:shape>
+| 7.      | Create a backup of all databases highlighted in the previous step using the gpcrondump command. You can specify multiple databases using the -x option with a comma separated list of databases. You will also copy thepogstresql.conf and pg_hba.conf file as part of the backups with the -g option. The -a option will execute the command in non-interactive mode. Backup files will be saved to the /home/gpadmin/db_backup directory on the master and segment servers with the -u option. You will need the configuration files after you complete the failover process.
+
+[gpadmin@mdw ~]$ **gpcrondump -x dbbackup,dbstudent,faa,faa1,\  
+gpadmin,gpperfmon,names -u ~/db_backup -g -a**
+
+<v:shape id="Picture_x0020_130" o:spid="_x0000_i1137" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a625a69.PNG" style="width: 458pt; height: 349pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image401.png" o:title="SNAGHTML1a625a69.PNG"></v:imagedata></v:shape>
+| 8.      | From the master server, switch to the root user and issue the reboot command to reboot the master server. The database will not start automatically as there are no startup scripts in place for the database start up.
+
+[gpadmin@mdw ~]$ **su -**
+
+[root@mdw ~]# **reboot**
+
+<v:shape id="Picture_x0020_133" o:spid="_x0000_i1136" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a6935ba.PNG" style="width: 458pt; height: 71pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image402.png" o:title="SNAGHTML1a6935ba.PNG"></v:imagedata></v:shape>
+
+The purpose of this step is to simulate unavailability of the master server. You can then force the standby server to become the new primary master server.
+
+Do not proceed until this step has been completed.
+| 9.      | Confirm that your master server is down, by pinging it as shown from the standby master** **server.
+
+[gpadmin@smdw ~]$ **ping mdw**
+
+<v:shape id="Picture_x0020_136" o:spid="_x0000_i1135" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a6a9db0.PNG" style="width: 458pt; height: 117pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image403.png" o:title="SNAGHTML1a6a9db0.PNG"></v:imagedata></v:shape>
+| 10.   | From your standby** **server, smdw, promote the standby master to be the primary master. You will need to specify the port to use for the database activation. You will continue to use port 5432.
+
+[gpadmin@smdw ~]$ **export PGPORT=5432**
+
+[gpadmin@smdw ~]$ **gpactivatestandby -d /data/master/gpseg-1**
+
+<v:shape id="Picture_x0020_139" o:spid="_x0000_i1134" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a781b96.PNG" style="width: 458pt; height: 205pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image404.png" o:title="SNAGHTML1a781b96.PNG"></v:imagedata></v:shape>
+
+Respond with **y** when asked to continue.
+
+It may take a few minutes for the process to complete.
+
+Note that the postgresql.conf and pg_hba.conf files are not synchronized as part of the master replication process.  Therefore, custom settings preserved on the master are not available here. This therefore required that you set the PGPORT environment variable before promoting the standby server to master.
+| 11.   | Verify the state of your database by running the gpstate command with the -s option to obtain detailed information. Search the output for strings that contain the word, master.
+
+[gpadmin@smdw ~]$ **gpstate –s | grep –i master**
+
+<v:shape id="Picture_x0020_145" o:spid="_x0000_i1133" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a81f3bb.PNG" style="width: 458pt; height: 255pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image405.png" o:title="SNAGHTML1a81f3bb.PNG"></v:imagedata></v:shape>
+
+Note that there is no standby running at this point.
+| 12.   | Open a PSQL session to the **faa1** database to verify the database has been recovered.
+
+[gpadmin@smdw ~]$ **psql faa1**
+
+<v:shape id="Picture_x0020_148" o:spid="_x0000_i1132" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a8316d5.PNG" style="width: 458pt; height: 89pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image406.png" o:title="SNAGHTML1a8316d5.PNG"></v:imagedata></v:shape>
+| 13.   | Display the user tables for the faa1 database.
+
+faa1=# **\dt**
+
+<v:shape id="Picture_x0020_154" o:spid="_x0000_i1131" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a83c433.PNG" style="width: 458pt; height: 301pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image407.png" o:title="SNAGHTML1a83c433.PNG"></v:imagedata></v:shape>
+| 14.   | Exit the database.
+| 15.   | After activating the standby server as the master server, you should update the database query statistics on all databases.
+
+For each database, execute the ANALYZE command to update statistics. Use the following script to perform this step.
+
+[gpadmin@smdw ~]$ **for db in \  
+`psql -tc "select datname from pg_database where datistemplate='f';"`; do**
+
+**    echo -n "$db: "  **
+
+**    psql $db -c 'ANALYZE';**
+
+**done**
+
+<v:shape id="Picture_x0020_1188" o:spid="_x0000_i1130" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1b3df535.PNG" style="width: 458pt; height: 179pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image408.png" o:title="SNAGHTML1b3df535.PNG"></v:imagedata></v:shape>
+| 16.   | After activating a standby master in a recovery scenario and making it your current primary master, you can continue running that instance as your primary master. This assumes that the capabilities and dependability of that host machine are equivalent to the original master host.
+
+Before restoring the master and standby instances on original hosts, ensure that the conditions that caused the original failure have been fully fixed.
+
+Verify the original master server, mdw, is back online. Ping mdw from smdw.
+
+[gpadmin@smdw ~]$ **ping mdw**
+
+<v:shape id="Picture_x0020_1184" o:spid="_x0000_i1129" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a88069f.PNG" style="width: 458pt; height: 132pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image409.png" o:title="SNAGHTML1a88069f.PNG"></v:imagedata></v:shape>
+| 17.   | Reconnect your original terminal session to the original master server, mdw. Login as root and switch to the gpadminuser account.
+
+<v:shape id="Picture_x0020_1185" o:spid="_x0000_i1128" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a89b4e8.PNG" style="width: 458pt; height: 92pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image410.png" o:title="SNAGHTML1a89b4e8.PNG"></v:imagedata></v:shape>
+| 18.   | On your original master server, mdw, rename the directory /data/master/gpseg-1 to /data/master/gpseg-1_orig.  The utility gpinitstandby will recreate the directory and requires that it does not exist.
+
+[gpadmin@mdw ~]$ **mv $MASTER_DATA_DIRECTORY \  
+${MASTER_DATA_DIRECTORY}_orig**
+
+<v:shape id="Picture_x0020_1186" o:spid="_x0000_i1127" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a9acde4.PNG" style="width: 458pt; height: 70pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image411.png" o:title="SNAGHTML1a9acde4.PNG"></v:imagedata></v:shape>
+| 19.   | From the standby server, smdw,** **execute the gpinitstandby command to promote the original master server, mdw, to be the new standby server.
+
+[gpadmin@smdw ~]$ **gpinitstandby -s mdw**
+
+<v:shape id="Picture_x0020_1189" o:spid="_x0000_i1126" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1b409339.PNG" style="width: 458pt; height: 313pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image412.png" o:title="SNAGHTML1b409339.PNG"></v:imagedata></v:shape>
+
+You will be prompted to continue. Type **y** and press Enter to proceed.
+
+Once completed, you should see the following output:
+
+<v:shape id="Picture_x0020_1190" o:spid="_x0000_i1125" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1b429d47.PNG" style="width: 458pt; height: 125pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image413.png" o:title="SNAGHTML1b429d47.PNG"></v:imagedata></v:shape>
+| 20.   | Use the gpstate command to check the status of the standby master. The output of the gpstate command shows that the original standby server, smdw**,** is now the master server. It also shows that the original master server, mdw, is now the standby server.
+
+[gpadmin@smdw ~]$ **gpstate -s | grep -i master**
+
+<v:shape id="Picture_x0020_1191" o:spid="_x0000_i1124" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1b43695b.PNG" style="width: 458pt; height: 274pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image414.png" o:title="SNAGHTML1b43695b.PNG"></v:imagedata></v:shape>
+
+You can also obtain the state of the standby and mirrors with the command, **gpstate -f**.
+| 21.   | Now that the failover has succeeded, reverse the roles of the master and standby servers so that mdw and smdw are back to their original roles. To perform this task, complete the following steps:
+
+On the current master server, smdw, stop the Greenplum database master instance only using the -am option.
+
+[gpadmin@smdw ~]$ **gpstop -am**
+
+<v:shape id="Picture_x0020_1209" o:spid="_x0000_i1123" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1b95ec04.PNG" style="width: 458pt; height: 284pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image415.png" o:title="SNAGHTML1b95ec04.PNG"></v:imagedata></v:shape>
+| 22.   | At this point, the database should no longer be running. From the current standby server, mdw, promote mdw to be the active master server. Use the gpactivatestandby utility to perform this task**.**
+
+[gpadmin@mdw ~]$** export PGPORT=5432**
+
+[gpadmin@mdw ~]$** gpactivatestandby -d $MASTER_DATA_DIRECTORY -f**
+
+<v:shape id="Picture_x0020_1193" o:spid="_x0000_i1122" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1b5156a6.PNG" style="width: 458pt; height: 205pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image416.png" o:title="SNAGHTML1b5156a6.PNG"></v:imagedata></v:shape>
+
+You will be prompted to continue. Type **y** and press Enter to proceed.
+
+Once completed, you should see the following output:
+
+<v:shape id="Picture_x0020_1210" o:spid="_x0000_i1121" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1b9c342a.PNG" style="width: 469pt; height: 152pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image417.png" o:title="SNAGHTML1b9c342a.PNG"></v:imagedata></v:shape>
+| 23.   | On mdw, execute the gpstate utility to determine the state of the active master server. This screen shows that there is no standby server configured and that mdw is back to its original role as the active master server.
+
+[gpadmin@mdw ~]$ **gpstate -s | grep -i master**
+
+<v:shape id="Picture_x0020_1196" o:spid="_x0000_i1120" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1b560da6.PNG" style="width: 458pt; height: 262pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image418.png" o:title="SNAGHTML1b560da6.PNG"></v:imagedata></v:shape>
+| 24.   | On smdw, start the process for changing this server back to its original role as the standby server.
+
+Rename the directory /data/master/gpseg-1 to /data/master/gpseg-1_orig. 
+
+[gpadmin@smdw ~]$ **mv $MASTER_DATA_DIRECTORY \  
+${MASTER_DATA_DIRECTORY}_orig**
+
+<v:shape id="Picture_x0020_1198" o:spid="_x0000_i1119" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1b57d779.PNG" style="width: 458pt; height: 1in; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image419.png" o:title="SNAGHTML1b57d779.PNG"></v:imagedata></v:shape>
+
+This step is necessary as the procedure to initialize a standby server into the Greenplum cluster will create the master data directory.
+| 25.   | From mdw, execute the gpinitstandby utility to promote the smdw server to the standby role.
+
+[gpadmin@mdw ~]$ **gpinitstandby -s smdw**
+
+<v:shape id="Picture_x0020_1200" o:spid="_x0000_i1118" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1b59e020.PNG" style="width: 458pt; height: 379pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image420.png" o:title="SNAGHTML1b59e020.PNG"></v:imagedata></v:shape>
+
+You will be prompted to continue. Type **y** and press Enter to proceed.
+| 26.   | Run the gpstate utility to re-verify the state of the master and standby servers. The screen below shows that the original roles for mdw (master) and smdw (standby) have been restored.
+
+[gpadmin@mdw ~]$ **gpstate -s | grep -i master**
+
+<v:shape id="Picture_x0020_1201" o:spid="_x0000_i1117" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1b5c2f97.PNG" style="width: 458pt; height: 273pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image421.png" o:title="SNAGHTML1b5c2f97.PNG"></v:imagedata></v:shape>
+| 27.   | Recover the postgresql.conf and pg_hba.conf file from your backups and push them to the$MASTER_DATA_DIRECTORY locations. This will overwrite the existing copies but will give you back your customized versions.
+
+Search the backup directory you created in this task for files with the name gp_master_config_files_*.tar.
+
+[gpadmin@mdw ~]$ **find ~/db_backup -name 'gp_master_config_files_*.tar'**
+
+<v:shape id="Picture_x0020_1204" o:spid="_x0000_i1116" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1b75eea2.PNG" style="width: 458pt; height: 79pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image422.png" o:title="SNAGHTML1b75eea2.PNG"></v:imagedata></v:shape>
+| 28.   | Extract the contents of the tarred file from the previous step.
+
+[gpadmin@mdw ~]$ **tar xvf /home/gpadmin/db_backup/db_dumps/20150331/gp_master_config_files_20150331103817.tar**
+
+<v:shape id="Picture_x0020_1205" o:spid="_x0000_i1115" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1b788593.PNG" style="width: 458pt; height: 97pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image423.png" o:title="SNAGHTML1b788593.PNG"></v:imagedata></v:shape>
+| 29.   | Copy the pg_hba.conf file and the postgresql.conf file to $MASTER_DATA_DIRECTORY.
+
+[gpadmin@mdw ~]$ **cp data/master/gpseg-1/pg_hba.conf $MASTER_DATA_DIRECTORY**
+
+[gpadmin@mdw ~]$ **cp data/master/gpseg-1/postgresql.conf $MASTER_DATA_DIRECTORY**
+
+<v:shape id="Picture_x0020_1206" o:spid="_x0000_i1114" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1b7acb79.PNG" style="width: 458pt; height: 92pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image424.png" o:title="SNAGHTML1b7acb79.PNG"></v:imagedata></v:shape>
+| 30.   | Re-read the configuration files with the gpstop -u command.
+
+<v:shape id="Picture_x0020_1207" o:spid="_x0000_i1113" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1b7b5abc.PNG" style="width: 458pt; height: 188pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image425.png" o:title="SNAGHTML1b7b5abc.PNG"></v:imagedata></v:shape>
+| 31.   | As a test, verify your non-superuser account, in this case student, can list the tables in the faa database.
+
+[gpadmin@mdw ~]$ **psql faa -c '\dt' -U student**
+
+<v:shape id="Picture_x0020_1208" o:spid="_x0000_i1112" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1b7de781.PNG" style="width: 458pt; height: 379pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image426.png" o:title="SNAGHTML1b7de781.PNG"></v:imagedata></v:shape>
+|  | **Summary**
+
+If the master server fails, the standby server can be used to bring the database back online and accessible to users. If a virtual IP address has been defined for the master and standby server, the virtual IP address can be used by the standby server so that users do not have to use a different IP address or hostname to access the database.
+
+Greenplum Database uses log replication to synchronize data between the master server and the backup server. Committed transactions are synchronized from the master server to the standby server. Should the master become unavailable, the standby can be promoted to act as the master until the master becomes available again.
+
+The replication process is maintained by a WAL process running on the master server and the standby server. You can verify the state of synchronization by using the gpstate -f command or selecting against thepg_stat_replication view. This view contains the process id (procpid field), the state (state field), and the synchronization state (sync_state field) along with other information on the WAL process.
+
+Note that while transactions are synchronized, the postgresql.conf and pg_hba.conf files are not. Maintain a backup copy of these files and be prepared to incorporate the changes to those files on the standby server should you need to perform a failover.
+
+Additionally, when promoting the original master server to its original role, retrieve the backup copies of those files and push them to the recovered data directory.
+|====
+
+
+
+End of Lab Exercise

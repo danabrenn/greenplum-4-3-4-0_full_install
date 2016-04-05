@@ -1,0 +1,415 @@
+= 4. Using the PSQL Client and Greenplum Utilities
+
+
+
+|====
+|   
+
+**Purpose:**
+
+ | In this lab you will learn how to connect to the database using psql, the command line client interface to the Greenplum Database. You will learn how to use psql to run SQL commands both in interactive mode and non-interactive mode. You will also learn how to view the help in psql and about psql meta-commands.
+| 
+| **Tasks:** | Students perform the following tasks:
+
+·       Access the database with psql
+
+·       Install and configure Greenplum Command Center
+| 
+| **References:** | Module 3 – Greenplum Database Tools, Utilities, and Internals
+
+·       Lesson: Using the PSQL Client and Greenplum Utilities
+
+·       Lesson: Pivotal Greenplum Command Center
+|====
+
+
+**psql**
+
+
+
+|====
+| **Step** | **Action**
+| 1.      | Start a psql session by connecting to the database, postgres:
+
+ [gpadmin@mdw ~]$ **psql postgres**
+
+<v:shape id="Picture_x0020_114" o:spid="_x0000_i1449" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML67dbd86.PNG" style="width: 458pt; height: 95pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image089.png" o:title="SNAGHTML67dbd86.PNG"></v:imagedata></v:shape>
+| 2.      | The psql prompt displays the database you are connected to followed by =#,if you are logged in as the superuser account.
+
+At the psql prompt, type the **\h** meta-command to see a list of available SQL commands:
+
+postgres=# **\h**
+
+<v:shape id="Picture_x0020_116" o:spid="_x0000_i1448" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6887b49.PNG" style="width: 458pt; height: 320pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image090.png" o:title="SNAGHTML6887b49.PNG"></v:imagedata></v:shape>
+| 3.      | Use the \h meta-command to view the help for the SELECT SQLcommand only:
+
+postgres=# **\h SELECT**
+
+<v:shape id="Picture_x0020_117" o:spid="_x0000_i1447" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML688c9b6.PNG" style="width: 458pt; height: 320pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image091.png" o:title="SNAGHTML688c9b6.PNG"></v:imagedata></v:shape>
+| 4.      | At the psql prompt, type the \? meta-command to see a list of available psql meta-commands:
+
+postgres=# **\?**
+
+<v:shape id="Picture_x0020_119" o:spid="_x0000_i1446" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6892212.PNG" style="width: 458pt; height: 320pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image092.png" o:title="SNAGHTML6892212.PNG"></v:imagedata></v:shape>
+| 5.      | Run a SELECT statement on the gp_segment_configurationtable. This system catalog table shows the entire master and segment instances in your array.
+
+postgres=# **SELECT * FROM gp_segment_configuration;**
+
+Note the use of the semi-colon (;) at the end of the statement. This completes the SQL command, allowing pSQL to execute the command. If you do not include the semi-colon, but press return, your command will continue on the next line.
+
+Your results should be similar to the following:
+
+<v:shape id="Picture_x0020_120" o:spid="_x0000_i1445" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML68a588d.PNG" style="width: 458pt; height: 235pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image093.png" o:title="SNAGHTML68a588d.PNG"></v:imagedata></v:shape>
+| 6.      | Exit the psql session:
+
+postgres=# **\q**
+
+<v:shape id="Picture_x0020_122" o:spid="_x0000_i1444" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML68abb74.PNG" style="width: 459pt; height: 63pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image094.png" o:title="SNAGHTML68abb74.PNG"></v:imagedata></v:shape>
+| 7.      | Execute the same SELECT statement you ran earlier, but this time, in non-interactive mode:
+
+[gpadmin@mdw ~]$ **psql postgres -c 'SELECT * FROM gp_segment_configuration;'**
+
+<v:shape id="Picture_x0020_123" o:spid="_x0000_i1443" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML68c6440.PNG" style="width: 458pt; height: 247pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image095.png" o:title="SNAGHTML68c6440.PNG"></v:imagedata></v:shape>
+| 8.      | Create a database with the same name as the user gpadmin. By creating a database with the same name as the current user, you will automatically be connected to this database if you do not specify the database name as part of the psql command line.
+
+1.     Connect to the template1 database:  
+[gpadmin@mdw ~]$ **psql postgres**
+
+2.     Create a new database and name it **gpadmin**:  
+postgres=# **create database gpadmin;**
+
+3.     Exit the database session:  
+postgres=# **\q**
+
+<v:shape id="Picture_x0020_135" o:spid="_x0000_i1442" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6c21325.PNG" style="width: 459pt; height: 122pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image096.png" o:title="SNAGHTML6c21325.PNG"></v:imagedata></v:shape>
+| 9.      | Using vi, edit the .bash_profile and add the PGDATABASE variable as shown below.
+
+
+
+This variable contains your **default login database name**. psql chooses a default database based on your username. The PGDATABASEenvironment variable takes precedence over this action, so if it is set, you will automatically be logged in to the database specified in the variable if you do not specify one on the command line.
+
+<v:shape id="Picture_x0020_137" o:spid="_x0000_i1441" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6c42722.PNG" style="width: 459pt; height: 321pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image097.png" o:title="SNAGHTML6c42722.PNG"></v:imagedata></v:shape>
+
+Run the command below to make the changes active immediately.
+
+[gpadmin@mdw ~]$ **source .bash_profile**
+
+<v:shape id="Picture_x0020_138" o:spid="_x0000_i1440" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6c4846e.PNG" style="width: 458pt; height: 62pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image098.png" o:title="SNAGHTML6c4846e.PNG"></v:imagedata></v:shape>
+| 10.   | Copy the updated .bash_profile file to the standby server smdw.
+
+
+
+[gpadmin@mdw ~]$ **scp /home/gpadmin/.bash_profile smdw:**
+
+<v:shape id="Picture_x0020_1380" o:spid="_x0000_i1439" type="#_x0000_t75" style="width: 458pt; height: 119pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image099.png" o:title=""></v:imagedata></v:shape>
+| 11.   | Log in to Greenplum with the default database of gpadmin.
+
+[gpadmin@mdw ~]$ **psql**
+
+<v:shape id="Picture_x0020_141" o:spid="_x0000_i1438" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6c73dfc.PNG" style="width: 458pt; height: 92pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image100.png" o:title="SNAGHTML6c73dfc.PNG"></v:imagedata></v:shape>
+| 12.   | From within the database session, connect to the postgres database.
+
+gpadmin=# **\c postgres**
+
+<v:shape id="Picture_x0020_143" o:spid="_x0000_i1437" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6c7bc5f.PNG" style="width: 458pt; height: 74pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image101.png" o:title="SNAGHTML6c7bc5f.PNG"></v:imagedata></v:shape>
+| 13.   | Close your psql session.
+
+postgres=# **\q**
+
+<v:shape id="Picture_x0020_144" o:spid="_x0000_i1436" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6c8651c.PNG" style="width: 459pt; height: 60pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image102.png" o:title="SNAGHTML6c8651c.PNG"></v:imagedata></v:shape>
+|====
+
+
+
+
+
+
+
+|====
+| **Step** | **Action**
+| 1.      | As root, connect to the master server, mdw, and change to the directory/rawdata/Binaries and list the contents of the directory:
+
+[root@mdw ~]# **cd /rawdata/Binaries**
+
+[root@mdw Binaries]# **ls**
+
+<v:shape id="Picture_x0020_1376" o:spid="_x0000_i1435" type="#_x0000_t75" style="width: 457pt; height: 96pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image103.png" o:title=""></v:imagedata></v:shape>
+| 2.      | Install the Greenplum Command Center binary to the master server, mdw, using the bash command.
+
+[root@mdw Binaries]# **bash \  
+greenplum-cc-web-1.3.0.0-build-91-RHEL5-x86_64.bin**
+
+<v:shape id="Picture_x0020_150" o:spid="_x0000_i1434" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6d4253f.PNG" style="width: 458pt; height: 320pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image104.png" o:title="SNAGHTML6d4253f.PNG"></v:imagedata></v:shape>
+
+Hit **q** at any time to bypass the license agreement or space to read the next page of the license agreement.
+| 3.      | Type **yes** and press **Enter** to accept the Greenplum Command Center license agreement.
+
+<v:shape id="Picture_x0020_153" o:spid="_x0000_i1433" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6d58df0.PNG" style="width: 458pt; height: 320pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image105.png" o:title="SNAGHTML6d58df0.PNG"></v:imagedata></v:shape>
+| 4.      | Hit **Enter** to accept the default installation directory location:   
+/usr/local/greenplum-cc-web-1.3.0.0-build-91.
+
+
+
+<v:shape id="Picture_x0020_155" o:spid="_x0000_i1432" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6d63085.PNG" style="width: 458pt; height: 119pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image106.png" o:title="SNAGHTML6d63085.PNG"></v:imagedata></v:shape>
+| 5.      | Type **yes** and press **Enter** to install the Greenplum Command Center.
+
+<v:shape id="Picture_x0020_156" o:spid="_x0000_i1431" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6d6a334.PNG" style="width: 458pt; height: 112pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image107.png" o:title="SNAGHTML6d6a334.PNG"></v:imagedata></v:shape>
+| 6.      | Type **yes** and press **Enter** to create the installation directory for the Greenplum Command Center.
+
+<v:shape id="Picture_x0020_158" o:spid="_x0000_i1430" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6d715d4.PNG" style="width: 458pt; height: 118pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image108.png" o:title="SNAGHTML6d715d4.PNG"></v:imagedata></v:shape>
+| 7.      | Greenplum Command Center binaries will be installed into the default directory: /usr/local/greenplum-cc-web-1.3.0.0-build-91.
+
+
+
+You will see the following output confirming that the binaries have been installed:
+
+
+
+<v:shape id="Picture_x0020_159" o:spid="_x0000_i1429" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6d7fc4c.PNG" style="width: 458pt; height: 168pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image109.png" o:title="SNAGHTML6d7fc4c.PNG"></v:imagedata></v:shape>
+| 8.      | Change the user and group permissions of Pivotal Greenplum Command Center directory to gpadmin**.**
+
+
+
+[root@mdw Binaries]# **chown -R gpadmin:gpadmin \  
+/usr/local/greenplum-cc-web-1.3.0.0-build-91**
+
+
+
+<v:shape id="Picture_x0020_172" o:spid="_x0000_i1428" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6dac89f.PNG" style="width: 459pt; height: 1in; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image110.png" o:title="SNAGHTML6dac89f.PNG"></v:imagedata></v:shape>
+| 9.      | Change user to gpadmin.
+
+[root@mdw Binaries]# **su - gpadmin**
+
+<v:shape id="Picture_x0020_174" o:spid="_x0000_i1427" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6dcf20f.PNG" style="width: 458pt; height: 65pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image111.png" o:title="SNAGHTML6dcf20f.PNG"></v:imagedata></v:shape>
+| 10.   | The installation directory contains a gpcc_path.sh file with path and environment settings for the Console. Source the file as follows:
+
+
+
+[gpadmin@mdw ~]$ **source /usr/local/greenplum-cc-web/gpcc_path.sh**
+
+<v:shape id="Picture_x0020_178" o:spid="_x0000_i1426" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6de78cb.PNG" style="width: 458pt; height: 64pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image112.png" o:title="SNAGHTML6de78cb.PNG"></v:imagedata></v:shape>
+| 11.   | Run the gpperfmon_install utility to perform the following:
+
+1.     Create the Greenplum Command Center database (gpperfmon).
+
+2.     Creates the Greenplum Command Center superuser role (gpmon).
+
+3.     Configures Greenplum Database server to accept connections from the Greenplum Command Center superuser role (edits the pg_hba.conf and .pgpass files).
+
+4.     Sets the Greenplum Command Center server configuration parameters in the Greenplum Database serverpostgresql.conf files.
+
+
+
+[gpadmin@mdw ~]$ **gpperfmon_install \  
+--enable --password changeme --port 5432**
+
+You will see the following output to the console:
+
+
+|  | <v:shape id="Picture_x0020_179" o:spid="_x0000_i1425" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6e55fa0.PNG" style="width: 458pt; height: 520pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image113.png" o:title="SNAGHTML6e55fa0.PNG"></v:imagedata></v:shape>
+| 12.   | Modify the .bash_profile file and add an entry for the GPPERFMONHOMEvariable. This variable, which specifies the home directory for Greenplum Command Center, should be set to **/usr/local/greenplum-cc-web**.
+
+Add the following to the file:
+
+**GPPERFMONHOME=/usr/local/greenplum-cc-web**
+
+**export GPPERFMONHOME**
+
+**source $GPPERFMONHOME/gpcc_path.sh**
+
+
+
+<v:shape id="Picture_x0020_1303" o:spid="_x0000_i1424" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML22436de2.PNG" style="width: 458pt; height: 262pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image114.png" o:title="SNAGHTML22436de2.PNG"></v:imagedata></v:shape>
+| 13.   | Source /home/gpadmin.bash_profile
+
+[gpadmin@mdw ~]$ **source /home/gpadmin/.bash_profile**
+
+<v:shape id="Picture_x0020_1382" o:spid="_x0000_i1423" type="#_x0000_t75" style="width: 457pt; height: 135pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image115.png" o:title=""></v:imagedata></v:shape>
+| 14.   | Add a record to pg_hba.conf to allow Command Center to connect to localhost through the IPv6 address ::1.
+
+
+
+[gpadmin@mdw ~]$ echo “host     all    gpmon   ::1/128     md5” >> \ /data/master/gpseg-1/pg_hba.conf
+
+
+
+<v:shape id="Picture_x0020_149" o:spid="_x0000_i1422" type="#_x0000_t75" style="width: 457pt; height: 61pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image116.png" o:title=""></v:imagedata></v:shape>
+
+
+
+**NOTE**: Tab characters are not supported in the pg_hba.conf file. You must use spaces between the record entries.
+| 15.   | Restart the Greenplum Database cluster to enable gpperfmon.
+
+[gpadmin@mdw ~]$ **gpstop -a -r**
+
+The gpstop command may take some time to stop the database.
+
+<v:shape id="Picture_x0020_180" o:spid="_x0000_i1421" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6f39cfe.PNG" style="width: 458pt; height: 280pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image117.png" o:title="SNAGHTML6f39cfe.PNG"></v:imagedata></v:shape>
+| 16.   | After the Greenplum Database Cluster has restarted, execute the following command:
+
+[gpadmin@mdw ~]$ **gpcmdr --setup**
+
+You will be prompted for the instance name:
+
+Type in **gp1** and press **Enter**.
+
+
+
+<v:shape id="Picture_x0020_184" o:spid="_x0000_i1420" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML70a7811.PNG" style="width: 458pt; height: 150pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image118.png" o:title="SNAGHTML70a7811.PNG"></v:imagedata></v:shape>
+| 17.   | You will be prompted with the question, Is the master host remote?
+
+Press **Enter** to accept the default answer of No.
+
+<v:shape id="Picture_x0020_186" o:spid="_x0000_i1419" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML70bc43d.PNG" style="width: 458pt; height: 65pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image119.png" o:title="SNAGHTML70bc43d.PNG"></v:imagedata></v:shape>
+| 18.   | You will be prompted for the display name of the instance:
+
+Type in **traindb** and press **Enter**
+
+
+
+<v:shape id="Picture_x0020_188" o:spid="_x0000_i1418" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML70c719b.PNG" style="width: 458pt; height: 65pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image120.png" o:title="SNAGHTML70c719b.PNG"></v:imagedata></v:shape>
+| 19.   | You will be prompted for the port number of the database. Press **Enter**to accept the default port number of 5432. A message will appear indicating that the instance schema is being created.
+
+
+
+<v:shape id="Picture_x0020_189" o:spid="_x0000_i1417" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML70d2b87.PNG" style="width: 458pt; height: 62pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image121.png" o:title="SNAGHTML70d2b87.PNG"></v:imagedata></v:shape>
+| 20.   | You will be prompted for the web server port. Press **Enter** to accept the default port of 28080.
+
+<v:shape id="Picture_x0020_190" o:spid="_x0000_i1416" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML70e1134.PNG" style="width: 458pt; height: 130pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image122.png" o:title="SNAGHTML70e1134.PNG"></v:imagedata></v:shape>
+| 21.   | You will be prompted to enable SSL for the Web API. Type **Y** and press **Enter** to confirm SSL.
+
+<v:shape id="Picture_x0020_191" o:spid="_x0000_i1415" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML70ed82a.PNG" style="width: 459pt; height: 146pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image123.png" o:title="SNAGHTML70ed82a.PNG"></v:imagedata></v:shape>
+| 22.   | You will be prompted with a series of questions for your certificate. Enter the following information for the certificate:
+
+·       Country name: **US**
+
+·       State or province name: **CA**
+
+·       Locality name: **Palo Alto**
+
+·       Organization name: **EdServices**
+
+·       Organizational Unit: **PivotalEdu**
+
+·       Common name: **mdw**
+
+·       Email address: **gpadmin@mdw**
+
+<v:shape id="Picture_x0020_225" o:spid="_x0000_i1414" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML710170d.PNG" style="width: 458pt; height: 234pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image124.png" o:title="SNAGHTML710170d.PNG"></v:imagedata></v:shape>
+| 23.   | When prompted to enable IPV6, press the **ENTER** key to accept the default No.
+
+<v:shape id="Picture_x0020_226" o:spid="_x0000_i1413" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML71110d6.PNG" style="width: 458pt; height: 57pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image125.png" o:title="SNAGHTML71110d6.PNG"></v:imagedata></v:shape>
+| 24.   | When prompted to enable cross site request forgery protection, press **Enter** to accept the default of no.
+
+<v:shape id="Picture_x0020_227" o:spid="_x0000_i1412" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML7128f96.PNG" style="width: 458pt; height: 63pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image126.png" o:title="SNAGHTML7128f96.PNG"></v:imagedata></v:shape>
+| 25.   | When prompted to copy the instance to the standby server, type **N** and press**Enter**.
+
+<v:shape id="Picture_x0020_229" o:spid="_x0000_i1411" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML718fc5d.PNG" style="width: 458pt; height: 57pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image127.png" o:title="SNAGHTML718fc5d.PNG"></v:imagedata></v:shape>
+
+The configuration process will complete, displaying the following:
+
+<v:shape id="Picture_x0020_230" o:spid="_x0000_i1410" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML7196eed.PNG" style="width: 458pt; height: 229pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image128.png" o:title="SNAGHTML7196eed.PNG"></v:imagedata></v:shape>
+| 26.   | Start the Greenplum Command Center web service for the instance you created using the   
+gpcmdr --start gp1 command.
+
+
+
+[gpadmin@mdw ~]$ **gpcmdr --start gp1**
+
+<v:shape id="Picture_x0020_9" o:spid="_x0000_i1409" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML72aab2.PNG" style="width: 458pt; height: 97pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image129.png" o:title="SNAGHTML72aab2.PNG"></v:imagedata></v:shape>
+| 27.   | Using a browser of choice, connect to the URL,**https://172.16.1.11:28080**.
+
+
+
+Depending on which browser you are using you may receive a “Warning” or “Exception” that the connection is “Insecure”. Since Greenplum is running on the same machine simply accept the “Exception” and continue.
+| 28.   | The login screen will now be displayed. Log in with the following credentials:
+
+·       Username: **gpadmin**
+
+·       Password: **changeme**
+
+<v:shape id="Picture_x0020_15" o:spid="_x0000_i1408" type="#_x0000_t75" style="width: 457pt; height: 289pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image130.png" o:title=""></v:imagedata></v:shape>
+
+Click **Login** to proceed.
+
+**Note: **The gpadmin user is a trusted account within the Greenplum Database. You can further secure the environment by requiring that thegpadmin user account enter a MD5 or SHA-256 encrypted password.
+|  | The dashboard will be displayed and will show the current system performance information.
+
+<v:shape id="Picture_x0020_10" o:spid="_x0000_i1407" type="#_x0000_t75" style="width: 452pt; height: 239pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image131.png" o:title=""></v:imagedata></v:shape>
+|====
+
+
+
+
+
+
+
+|====
+| **Step** | **Action**
+| 1.      | In this task, you will explore the Pivotal Greenplum Command Center environment, managing and monitoring activities within the environment.
+
+The Dashboard provides an overview of the environment.
+
+Collect the following information:
+
+·       What is the health of the database?  
+_______________________________________________________________________
+
+·       How many segments are visible within the environment and what is their status?  
+_______________________________________________________________________
+| 2.      | Click **More »** in the Segment Health panel. The Administration tab should now be displayed with the Segment Health panel displayed.
+
+<v:shape id="Picture_x0020_19" o:spid="_x0000_i1406" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLdb084d.PNG" style="width: 455pt; height: 237pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image132.png" o:title="SNAGHTMLdb084d.PNG"></v:imagedata></v:shape>
+
+Are all of the segments and mirrors in their preferred roles? ________________________________
+| 3.      | From the left panel, click Database Usage Report. Click Generate Report to run a report highlighting how the database is being used. The results will be displayed in the Summary panel.
+
+<v:shape id="Picture_x0020_24" o:spid="_x0000_i1405" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLe00947.PNG" style="width: 455pt; height: 315pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image133.png" o:title="SNAGHTMLe00947.PNG"></v:imagedata></v:shape>
+
+Once the database is populated, this provides a graphical method of seeing the structure of the database, including the type of tables and the different databases available in the environment.
+
+Based on the report, are there any databases listed in your environment? _____________________
+| 4.      | From the left panel, click Storage Monitoring. The page displays a usage summary for your environment.
+
+<v:shape id="Picture_x0020_27" o:spid="_x0000_i1404" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLe3f7ab.PNG" style="width: 457pt; height: 316pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image134.png" o:title="SNAGHTMLe3f7ab.PNG"></v:imagedata></v:shape>
+
+Information on the GP Master is displayed by default. This includes all masters, the primary and standby masters. Use the panel below the Disk Usage Summary to answer the following:
+
+·       What is the data directory for the master and standby servers? ________________________
+
+·       What is the percentage of data used on sdw1? ______________________________________
+| 5.      | From the left panel, click Database Admin. This displays a panel that allows you to change the state of the database.
+
+<v:shape id="Picture_x0020_1383" o:spid="_x0000_i1403" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLe93d81.PNG" style="width: 457pt; height: 152pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image135.png" o:title="SNAGHTMLe93d81.PNG"></v:imagedata></v:shape>
+| 6.      | Restart the database in Smart mode. If there are any open connections to the database, a dialog box will be displayed asking if you wish to continue the restart with the **fast** option.
+
+<v:shape id="Picture_x0020_1390" o:spid="_x0000_i1402" type="#_x0000_t75" o:bordertopcolor="#ffbf00 pure" o:borderleftcolor="#ffbf00 pure" o:borderbottomcolor="#ffbf00 pure" o:borderrightcolor="#ffbf00 pure" style="width: 238pt; height: 113pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image136.png" o:title=""><w:bordertop type="single" width="6"><w:borderleft type="single" width="6"><w:borderbottom type="single" width="6"><w:borderright type="single" width="6"></w:borderright></w:borderbottom></w:borderleft></w:bordertop></v:imagedata></v:shape>
+
+Click **OK** to proceed.
+
+You should have at least one connection to the database. Where is that connection coming from?
+
+_________________________________________________________________________________
+| 7.      | Enter the password for the gpadmin account and click **Restart**.
+
+<v:shape id="Picture_x0020_1398" o:spid="_x0000_i1401" type="#_x0000_t75" o:bordertopcolor="#ffa500 pure" o:borderleftcolor="#ffa500 pure" o:borderbottomcolor="#ffa500 pure" o:borderrightcolor="#ffa500 pure" style="width: 422pt; height: 133pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image137.png" o:title=""><w:bordertop type="single" width="6"><w:borderleft type="single" width="6"><w:borderbottom type="single" width="6"><w:borderright type="single" width="6"></w:borderright></w:borderbottom></w:borderleft></w:bordertop></v:imagedata></v:shape>
+| 8.      | You will be asked to confirm, with a dialog warning you that you will end your session.
+
+<v:shape id="Picture_x0020_1401" o:spid="_x0000_i1400" type="#_x0000_t75" o:bordertopcolor="#ffbf00 pure" o:borderleftcolor="#ffbf00 pure" o:borderbottomcolor="#ffbf00 pure" o:borderrightcolor="#ffbf00 pure" style="width: 237pt; height: 92pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image138.png" o:title=""><w:bordertop type="single" width="6"><w:borderleft type="single" width="6"><w:borderbottom type="single" width="6"><w:borderright type="single" width="6"></w:borderright></w:borderbottom></w:borderleft></w:bordertop></v:imagedata></v:shape>
+
+Click **OK** to proceed.
+
+You should see the following as the database is restarted.
+
+<v:shape id="Picture_x0020_1402" o:spid="_x0000_i1399" type="#_x0000_t75" style="width: 442pt; height: 337pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image139.png" o:title=""></v:imagedata></v:shape>
+| 9.      | Once the database has restarted, click **OK** to return to the login screen to log back in.
+
+<v:shape id="Picture_x0020_1403" o:spid="_x0000_i1398" type="#_x0000_t75" o:bordertopcolor="#ffbf00 pure" o:borderleftcolor="#ffbf00 pure" o:borderbottomcolor="#ffbf00 pure" o:borderrightcolor="#ffbf00 pure" style="width: 437pt; height: 330pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image140.png" o:title=""><w:bordertop type="single" width="6"><w:borderleft type="single" width="6"><w:borderbottom type="single" width="6"><w:borderright type="single" width="6"></w:borderright></w:borderbottom></w:borderleft></w:bordertop></v:imagedata></v:shape>
+| 10.   | Log into Pivotal Command Center with the gpadmin user account.
+|====
+
+
+
+End of Lab Exercise
+
+  

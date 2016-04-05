@@ -1,0 +1,99 @@
+= 20. Improve Performance with Statistics
+
+
+
+|====
+|   
+
+**Purpose:** | In this lab you will gather statistics on all of the dimension and fact tables in your data warehouse. You will then do an EXPLAIN ANALYZE step for the two queries from the previous lab.
+| 
+| **Tasks:** | Students perform the following task: Gather statistics and analyze queries.
+| 
+| **References:** | Module 8 – Performance Analysis and Tuning
+
+·       Lesson: Improve Performance with Statistics
+|====
+
+
+
+|====
+| **Step** | **Action**
+| 1.      | Connect to the datamart database as gpadmin.
+| 2.      | Analyze each of dimensions and facts tables using the ANALYZE command:
+
+1.     Analyze the dimensions.country table:  
+datamart=#** analyze dimensions.country;**
+
+2.     Analyze the dimensions.customer table:  
+datamart=# **analyze dimensions.customer;**
+
+3.     Analyze the dimensions.store table:  
+datamart=# **analyze dimensions.store;**
+
+4.     Analyze the facts.transaction table  
+datamart=# **analyze facts.transaction;**
+
+<v:shape id="Picture_x0020_33" o:spid="_x0000_i1052" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML39eec9d4.PNG" style="width: 458pt; height: 127pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image486.png" o:title="SNAGHTML39eec9d4.PNG"></v:imagedata></v:shape>
+| 3.      | Execute the first query from the previous plan with the EXPLAIN command. This query is found in the/home/gp/sql/load_files/adv_sql_files/lab5query1.sql file:  
+
+
+
+datamart=# **\i /home/gp/sql/load_files/adv_sql_files/lab5query1.sql**
+
+<v:shape id="Picture_x0020_234" o:spid="_x0000_i1051" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML39f01380.PNG" style="width: 458pt; height: 457pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image487.png" o:title="SNAGHTML39f01380.PNG"></v:imagedata></v:shape>
+
+Are there any differences between the query plans with statistics?
+
+__________________________________________________________________
+
+__________________________________________________________________
+
+__________________________________________________________________
+| 4.      | Execute the second explain query plan from the previous lab using the EXPLAIN command. This query is found in the /home/gp/sql/load_files/adv_sql_files/lab5query2.sql file:  
+
+
+
+datamart=# **\i /home/gp/sql/load_files/adv_sql_files/lab5query2.sql**
+
+<v:shape id="Picture_x0020_250" o:spid="_x0000_i1050" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML39f0a11f.PNG" style="width: 458pt; height: 457pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image488.png" o:title="SNAGHTML39f0a11f.PNG"></v:imagedata></v:shape>
+
+Do you note any differences between this output and the output from the previous lab?
+
+__________________________________________________________________
+
+__________________________________________________________________
+
+__________________________________________________________________
+| 5.      | Execute these same queries with an EXPLAIN ANALYZE statement to compare actual execution demographics with the projected execution demographics. This query is found in the/home/gp/sql/load_files/adv_sql_files/lab6query1.sql file:
+
+datamart=# **\i /home/gp/sql/load_files/adv_sql_files/lab6query1.sql**
+|  | <v:shape id="Picture_x0020_252" o:spid="_x0000_i1049" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML39f2c64b.PNG" style="width: 458pt; height: 457pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image489.png" o:title="SNAGHTML39f2c64b.PNG"></v:imagedata></v:shape>
+| 6.      | What do you note about this output when compared to an EXPLAIN?
+
+__________________________________________________________________
+
+__________________________________________________________________
+
+__________________________________________________________________
+| 7.      | Execute the second query with EXPLAIN ANALYZE as well. This query is found in the/home/gp/sql/load_files/adv_sql_files/lab6query2.sql file:  
+
+
+
+datamart=# **\i /home/gp/sql/load_files/adv_sql_files/lab6query2.sql**
+
+<v:shape id="Picture_x0020_1192" o:spid="_x0000_i1048" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML39f52368.PNG" style="width: 458pt; height: 457pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image490.png" o:title="SNAGHTML39f52368.PNG"></v:imagedata></v:shape>
+| 8.      | What do you note about this output when compared to an EXPLAIN?
+
+__________________________________________________________________
+
+__________________________________________________________________
+
+__________________________________________________________________
+|  | **Summary**
+
+ANALYZE is a SQL command that updates the database statistics used by the query planner. In this use case, a query is run both before and after doing ANALYZE. After statistics are collected, the query planner chooses a HashAggregate operation over a much slower GroupAggregate operation. Without any statistics, the query planner could not estimate how many records might be returned, and therefore could not determine if there was sufficient work memory to do the aggregations in memory. The planner always takes the safe route and does aggregations by reading/writing from disk, which is significantly slower.
+|====
+
+
+
+End of Lab Exercise

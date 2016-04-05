@@ -1,0 +1,24 @@
+= 1. Greenplum Product Overview
+
+| **Purpose:** |  In this lab, you review your knowledge of Greenplum Database concepts, architecture, and components.
+| -- | -- 
+| **Tasks:** |  Students perform the following task: Provide answers to the review questions provided.
+| **References****:** |  Module 1 – Greenplum Fundamental Concepts
+|  |  * Lesson: The Basics of Data Warehousing
+|  |  * Lesson: Greenplum Concepts, Features, and Benefits
+|  |  * Lesson: Greenplum Architecture – Shared Nothing and MPP
+|  |  * Lesson: Greenplum Product Overview
+| **Task – Greenplum Product Review** |
+|  |
+| **Step** |  **Action**
+| 1. |  What is the master instance and what is its purpose?
+| 2. |  Name three clients that can connect to a Greenplum database.
+| 3. |  What is the role of the segment instances in a Greenplum Database system?
+| 4. | What is the purpose of mirroring in a Greenplum Database?
+| 5. | What is the Interconnect?
+| 6. | Where is table data stored in a Greenplum Database system?
+| 7. | How are system management tasks performed in a Greenplum Database?
+| 8. | How is data distributed in a Greenplum Database?
+| 9. | Which redundant components can you deploy in order to have a Greenplum Database system running without a single point of failure?
+
+End of Lab Exercise

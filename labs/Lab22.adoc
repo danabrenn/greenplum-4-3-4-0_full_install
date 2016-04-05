@@ -1,0 +1,296 @@
+= 22. Advanced Reporting Using OLAP
+
+
+
+|====
+|   
+
+**Purpose:** | In this lab, you will be given a set of reporting requirements. You will write the SQL using the various OLAP functions discussed in the module. You may use the examples in the module as the basis for your queries.
+| 
+| **Tasks:** | Students perform the following task: Create reporting queries using OLAP functions
+| 
+| **References:** | Module 9 – Developing Reports Using Advanced SQL
+
+·       Lesson: Advanced Reporting Using OLAP
+|====
+
+
+|====
+| **Step** | **Action**
+| 1.      | The reporting requirements for which you will develop queries using OLAP functions are as follows:
+
+·       Create a query that gives a rolling total of the Sales Amount by customer. Give the customer name.
+
+·       Create a query that gives a monthly total of the Sales Amount for all stores with a grocery and a deli by month, by state summarizing at each control break (state and month). (Hint: try one of the grouping sets like rollup or cube.)
+
+·       Create a query that lists the running total of each amount column by month, by store. Display the store name with the measures. (Hint: See the example in the module that uses a “derived table” or “in-line view”.)
+
+·       Create a query that lists the top customer by Sales Amount, by month to support a customer rewards marketing campaign. (Hint: You will likely need 2 “derived tables” or in-line views to make this query work. It is admittedly tricky!)
+
+·       Create a query that lists the stores, by month ranked by the most items sold.
+
+**Note:** When working with dates, the easiest method to convert a date into month/year is with the following syntax:TO_CHAR(date, 'yyyy-mm').
+| 2.      | Connect to the datamart database as gpadmin.
+| 3.      | The query for the first requirement makes use of the SUM moving window function.
+
+See the lab example in the, /home/gp/sql/load_files/adv_sql_files/lab8query1.sqlfile if you are having problems writing this SQL. The content is as follows:
+
+datamart=# **SELECT  c.custname**
+
+ **       ,t.transdate**
+
+ **       ,t.SalesAmt**
+
+ **       ,SUM(t.SalesAmt) OVER (PARTITION BY t.customerid**
+
+ **                              ORDER BY t.transdate ASC**
+
+ **                              ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS RollingTotalAmt**
+
+ **  FROM  facts.transaction t**
+
+ **        INNER JOIN dimensions.customer c**
+
+ **        ON c.customerid = t.customerid;**
+
+<v:shape id="Picture_x0020_1265" o:spid="_x0000_i1040" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a0c91d4.PNG" style="width: 458pt; height: 253pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image498.png" o:title="SNAGHTML3a0c91d4.PNG"></v:imagedata></v:shape>
+| 4.      | The query for the second requirement works really well with the CUBE group function. You can use theORDER BY clause of the SQL statement to display the results in a more readable format.
+
+See the lab example in the /home/gp/sql/load_files/adv_sql_files/lab8query2.sqlfile if you need assistance.
+
+datamart=# **SELECT s.storename**
+
+ **      ,to_char(t.transdate,'YYYY-MM') AS TransMonth**
+
+ **      ,SUM(t.SalesAmt) AS MonthlySalesAmt**
+
+
+
+ **  FROM facts.transaction t**
+
+ **       INNER JOIN dimensions.store s**
+
+ **       ON s.storeid = t.storeid**
+
+**WHERE  s.grocery = true**
+
+ **  AND  s.deli = true**
+
+
+
+**GROUP BY CUBE(s.storename,TransMonth)**
+
+**ORDER BY 1,2;**
+
+<v:shape id="Picture_x0020_1268" o:spid="_x0000_i1039" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a0d313d.PNG" style="width: 458pt; height: 281pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image499.png" o:title="SNAGHTML3a0d313d.PNG"></v:imagedata></v:shape>
+| 5.      | The query for the third requirement is tricky.
+
+Consider using a derived table or an in-line view to do a summary by month and store of each of the amount columns. Then apply the SUM window function to each of those columns in your table.
+
+See the lab example in the /home/gp/sql/load_files/adv_sql_files/lab8query3.sqlfile if you need a hint.
+
+datamart=# **SELECT s.storename**
+
+**       ,t.TransMonth**
+
+**       , SUM(t.salesamt) OVER (PARTITION BY s.storename ORDER BY t.TransMonth) AS TotalSalesAmt**
+
+**       , SUM(t.taxamt) OVER (PARTITION BY s.storename ORDER BY t.TransMonth) AS TotalTaxAmt**
+
+**       , SUM(t.discountamt) OVER (PARTITION BY s.storename ORDER BY t.TransMonth) AS TotalDiscountAmt**
+
+**       , SUM(t.couponamt) OVER (PARTITION BY s.storename ORDER BY t.TransMonth) AS TotalCouponAmt**
+
+**       , SUM(t.cashamt) OVER (PARTITION BY s.storename ORDER BY t.TransMonth) AS TotalCashAmt**
+
+**       , SUM(t.checkamt) OVER (PARTITION BY s.storename ORDER BY t.TransMonth) AS TotalCheckAmt**
+
+**       , SUM(t.ccamt) OVER (PARTITION BY s.storename ORDER BY t.TransMonth) AS TotalCCAmt**
+
+**       , SUM(t.debitamt) OVER (PARTITION BY s.storename ORDER BY t.TransMonth) AS TotalDebitAmt**
+
+**       , SUM(t.otheramt) OVER (PARTITION BY s.storename ORDER BY t.TransMonth) AS TotalOtherAmt**
+
+
+
+**FROM (SELECT storeid**
+
+**                ,TO_CHAR(transdate,'YYYY-MM') AS TransMonth**
+
+**                , SUM(salesamt) AS SalesAmt**
+
+**                , SUM(taxamt) AS TaxAmt**
+
+**                , SUM(discountamt) AS DiscountAmt**
+
+**                , SUM(couponamt) AS CouponAmt**
+
+**                , SUM(cashamt) AS CashAmt**
+
+**                , SUM(checkamt) AS CheckAmt**
+
+**                , SUM(ccamt) AS CCAmt**
+
+**                , SUM(debitamt) AS DebitAmt**
+
+**                , SUM(otheramt) AS OtherAmt**
+
+**          FROM  facts.transaction**
+
+**        GROUP BY 1,2) t**
+
+**        INNER JOIN dimensions.store s**
+
+**        ON s.storeid = t.storeid;**
+|  | <v:shape id="Picture_x0020_1269" o:spid="_x0000_i1038" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a0dee93.PNG" style="width: 458pt; height: 457pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image500.png" o:title="SNAGHTML3a0dee93.PNG"></v:imagedata></v:shape>
+| 6.      | The query for the fourth requirement is harder. You should consider a derived table or in-line view. However, you will need two:
+
+·       The first one does the summarization at your control breaks.
+
+·       The second gets the ranking for you and then executes the final statement against the last derived table to get the results.
+
+
+
+See the lab example in the /home/gp/sql/load_files/adv_sql_files/lab8query4.sqlfile for details and hints. The contents of the file are displayed below:
+
+
+
+datamart=# **SELECT Y.TransMonth**
+
+ **      ,Y.custname AS CustomerName**
+
+ **      ,Y.TotalSalesAmt**
+
+**FROM (SELECT X.TransMonth**
+
+ **            ,c.custname**
+
+ **            ,X.TotalSalesAmt**
+
+ **            ,RANK() OVER (PARTITION BY X.TransMonth**
+
+ **                              ORDER BY X.TotalSalesAmt DESC) AS CustomerRanking**
+
+
+
+ **        FROM (SELECT TO_CHAR(t.transdate,'YYYY-MM') AS TransMonth**
+
+ **                    ,t.customerid**
+
+ **                    ,SUM(t.salesamt) AS TotalSalesAmt**
+
+ **               FROM facts.transaction t**
+
+ **             GROUP BY 1,2**
+
+ **             ) X**
+
+ **             INNER JOIN dimensions.customer c**
+
+ **             ON c.customerid = X.customerid**
+
+ **      ) Y**
+
+**WHERE Y.CustomerRanking = 1**
+
+**ORDER BY 1 ASC;**
+|  | <v:shape id="Picture_x0020_1273" o:spid="_x0000_i1037" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a0f43a5.PNG" style="width: 458pt; height: 348pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image501.png" o:title="SNAGHTML3a0f43a5.PNG"></v:imagedata></v:shape>
+| 7.      | The query for the last requirement is similar to the query example in the lesson. Consider using a window partition to solve this query.
+
+See the lab example in the /home/gp/sql/load_files/adv_sql_files/lab8query5.sqlfile for hints. The content is as follows:
+
+datamart=# **SELECT t.TransMonth**
+
+ **      ,s.StoreName**
+
+ **      ,t.TotalItemCnt**
+
+ **      ,RANK() OVER (PARTITION BY t.TransMonth**
+
+ **                        ORDER BY t.TotalItemCnt DESC) AS ranking**
+
+**FROM (SELECT storeid**
+
+ **            ,TO_CHAR(transdate,'YYYY-MM') AS TransMonth**
+
+             ,SUM(itemcnt) AS TotalItemCnt
+
+ **        FROM transaction**
+
+ **       GROUP BY 1,2 ) t**
+
+ **       INNER JOIN store s ON s.storeid = t.storeid**
+
+**ORDER BY 1 ASC;**
+
+<v:shape id="Picture_x0020_1275" o:spid="_x0000_i1036" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a100b66.PNG" style="width: 458pt; height: 349pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image502.png" o:title="SNAGHTML3a100b66.PNG"></v:imagedata></v:shape>
+| 8.      | Connect to the faa database to execute queries against larger data sets.
+
+datamart=# **\c  faa**
+| 9.      | The following query lists flights from Denver International airport to Logan International (Boston) airport:
+
+faa=# **SELECT distinct carrierid, flightnum**
+
+**FROM factontimeperformance f INNER JOIN dimairline al**
+
+**ON f.airlineid = al.airlineid**
+
+ **  INNER JOIN dimairport ap**
+
+ **    ON f.originairportid = ap.airportid**
+
+**WHERE f.originairportid in (**
+
+ **  SELECT AIRPORTID**
+
+ **  FROM dimairport**
+
+ **  WHERE airportdescription  = 'Denver, CO: Denver International')AND f.destairportid in (**
+
+     **SELECT AIRPORTID**
+
+     **FROM dimairport**
+
+     **WHERE airportdescription  = 'Boston, MA: Logan International');**
+
+<v:shape id="Picture_x0020_1277" o:spid="_x0000_i1035" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a22f1de.PNG" style="width: 458pt; height: 289pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image503.png" o:title="SNAGHTML3a22f1de.PNG"></v:imagedata></v:shape>
+| 10.   | List the number of flights for each airline carrier leaving New York (originwacid=22). Provide the information for each carrier per year. Display the grand total number of flights in the year.
+
+Use the ROLLUP operator to display all the results at once:
+
+faa=# **SELECT year, carrierID, count(*)**
+
+**FROM factontimeperformance**
+
+**WHERE originwacid = 22**
+
+**GROUP BY ROLLUP(year, carrierID)**
+
+**ORDER BY year, carrierID;**
+
+<v:shape id="Picture_x0020_1282" o:spid="_x0000_i1034" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a2f5add.PNG" style="width: 458pt; height: 232pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image504.png" o:title="SNAGHTML3a2f5add.PNG"></v:imagedata></v:shape>
+| 11.   | List the number of flights leaving New York on a carrier and year basis. Display the total number of flights in the year and the total number of flights by a carrier. Use the cube operator to display all the results at once:
+
+faa=# **SELECT year, carrierID, count(*)**
+
+**FROM factontimeperformance**
+
+**WHERE originwacid = 22**
+
+**GROUP BY CUBE(year, carrierID)**
+
+**ORDER BY year, carrierID;**
+
+
+
+<v:shape id="Picture_x0020_1283" o:spid="_x0000_i1033" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a307f2f.PNG" style="width: 458pt; height: 280pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image505.png" o:title="SNAGHTML3a307f2f.PNG"></v:imagedata></v:shape>
+|  | **Summary**
+
+Use the OLAP grouping functionality whenever you need to display totals and sub-totals based on your group predicates.
+
+Use the OLAP window expressions whenever you want to utilize the values in prior rows for comparison or further aggregation. This precludes having to make multiple scans of the same table in order to accomplish these comparisons.
+|====
+
+
+
+End of Lab Exercise

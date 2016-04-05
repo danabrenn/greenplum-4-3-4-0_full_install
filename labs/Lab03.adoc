@@ -1,0 +1,400 @@
+= 3. Pivotal Greenplum Database Initialization
+
+
+
+|====
+|   
+
+**Purpose:**
+
+ | You will perform the following installation and setup tasks necessary for the Greenplum Database software to run:
+
+·       Verify that the Greenplum Database software binaries are installed on all hosts.
+
+·       Ensure the required file systems are created on all hosts.
+
+·       Ensure the Greenplum administrator user account is created on all hosts.
+
+·       Verify that SSH keys are exchanged between all hosts.
+
+·       Set environment variables on the master as needed.
+
+Many of these tasks are now automated, but you should continue to verify that the tasks have been completed. These installation tasks should be performed from your assigned master host.
+
+You will initialize a Greenplum Database array by examining the initialization configuration file and executing thegpinitsystem utility. You will also troubleshoot errors that may occur during initialization of a Greenplum Database array.
+| 
+| **Tasks:** | Students perform the following tasks:
+
+1.     Initialize the database with no mirrors and standby master using the gpinitsystemutility
+
+2.     Add mirrors with the gpaddmirrors utility
+
+3.     Add a standby master with thegpinitstandby utility
+
+4.     Delete the Greenplum database using thegpdeletesystem utility
+
+5.     Initialize a new Greenplum Database with mirrors and a standby master using thegpinitsystem utility.
+| 
+| **References:** | Module 2 – Database Installation and Initialization
+
+·       Lesson: Greenplum Database Initialization
+|====
+
+|====
+| **Step** | **Action**
+| 1.      | If not already connected to mdw, open a terminal session to mdw and log in as root with the password,Piv0tal. Switch to gpadmin user.
+
+[root@mdw ~]# **su - gpadmin**
+
+<v:shape id="Picture_x0020_124" o:spid="_x0000_i1485" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6aebc9d.PNG" style="width: 458pt; height: 62pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image053.png" o:title="SNAGHTML6aebc9d.PNG"></v:imagedata></v:shape>
+| 2.      | Create a directory named gpconfigs in the home directory of the gpadmin user as shown**.**
+
+[gpadmin@mdw ~]$ **mkdir gpconfigs**
+
+<v:shape id="Picture_x0020_125" o:spid="_x0000_i1484" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6af560e.PNG" style="width: 458pt; height: 66pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image054.png" o:title="SNAGHTML6af560e.PNG"></v:imagedata></v:shape>
+| 3.      | Copy the file   
+/usr/local/greenplum-db/docs/cli_help/gpconfigs/gpinitsystem_config** **into the directory /home/gpadmin/gpconfigs.
+
+[gpadmin@mdw ~]$ **cp \  
+/usr/local/greenplum-db/docs/cli_help/gpconfigs/gpinitsystem_config ~/gpconfigs**
+
+
+
+<v:shape id="Picture_x0020_126" o:spid="_x0000_i1483" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6afc64d.PNG" style="width: 459pt; height: 86pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image055.png" o:title="SNAGHTML6afc64d.PNG"></v:imagedata></v:shape>
+| 4.      | Change to the gpconfigs directory.
+
+[gpadmin@mdw ~]$ **cd gpconfigs**
+
+<v:shape id="Picture_x0020_128" o:spid="_x0000_i1482" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6b021f4.PNG" style="width: 458pt; height: 65pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image056.png" o:title="SNAGHTML6b021f4.PNG"></v:imagedata></v:shape>
+| 5.      | Create a copy of the segment only file you created earlier. This is simply for ease of use**. **This file should contain the hostname of all segment servers participating in the Greenplum environment. This file cannot contain any extra lines or spaces.
+
+[gpadmin@mdw ~]$ **cp /rawdata/Binaries/hostfile_gpssh_segonly \**
+
+** hostfile_gpinitsystem**
+
+<v:shape id="Picture_x0020_129" o:spid="_x0000_i1481" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6b3b2cd.PNG" style="width: 458pt; height: 70pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image057.png" o:title="SNAGHTML6b3b2cd.PNG"></v:imagedata></v:shape>
+| 6.      | Using vi, edit the gpinitsystem_config file. Locate the ‘**Required Parameters**’ section and replace the highlighted section with the following:
+
+**declare -a DATA_DIRECTORY=(/data/primary)**
+
+<v:shape id="Picture_x0020_131" o:spid="_x0000_i1480" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6b4e65b.PNG" style="width: 458pt; height: 320pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image058.png" o:title="SNAGHTML6b4e65b.PNG"></v:imagedata></v:shape>
+| 7.      | The final file appears as follows:
+
+<v:shape id="Picture_x0020_132" o:spid="_x0000_i1479" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6b58b51.PNG" style="width: 458pt; height: 320pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image059.png" o:title="SNAGHTML6b58b51.PNG"></v:imagedata></v:shape>
+
+
+
+This is a read-only file. Use :**wq!**to save the file.
+
+Verify there are no comment symbols (#) in front of the line you are adding or replacing. If so, remove the comment symbol. Failure to do so may result in the initialization failing.
+| 8.      | Run the gpinitsystem utility to create a Greenplum Database system using the values defined ingpinitsystem_config.j
+
+[gpadmin@mdw gpconfigs]$ **source \  
+/usr/local/greenplum-db/greenplum_path.sh**
+
+[gpadmin@mdw gpconfigs]$ **gpinitsystem -c gpinitsystem_config \  
+-h hostfile_gpinitsystem**
+
+<v:rect id="Rectangle_x0020_59" o:spid="_x0000_s1026" o:gfxdata="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
+" fillcolor="white [3212]" strokecolor="white [3212]" strokeweight="2pt" style="position: absolute; margin-left: 27.05pt; margin-top: 65.9pt; width: 37.5pt; height: 8.25pt; z-index: 251662336; visibility: visible;"><v:path arrowok="t"></v:path></v:rect> <v:shape id="Picture_x0020_91" o:spid="_x0000_i1478" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5c7dd9f.PNG" style="width: 458pt; height: 447pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image060.png" o:title="SNAGHTML5c7dd9f.PNG"></v:imagedata></v:shape>
+
+
+
+The utility will ask your permission to overwrite the configuration file.
+
+Confirm by pressing **y** and press **ENTER. **
+| 9.      | The utility displays the master, and primary segments configuration. It also asks you whether or not you want to continue with the Greenplum creation.
+
+<v:shape id="Picture_x0020_92" o:spid="_x0000_i1477" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5c8c55f.PNG" style="width: 458pt; height: 354pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image061.png" o:title="SNAGHTML5c8c55f.PNG"></v:imagedata></v:shape>
+
+Press **y** followed by **Enter** to continue.
+| 10.   | This screen shows that the gpinitsystem ended with no errors. This will take a few minutes.
+
+<v:shape id="Picture_x0020_93" o:spid="_x0000_i1476" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5cb111e.PNG" style="width: 458pt; height: 447pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image062.png" o:title="SNAGHTML5cb111e.PNG"></v:imagedata></v:shape>
+| 11.   | Perform the following steps on the master server (mdw):
+
+
+
+1.     Change to the gpadmin home directory, /home/gpadmin, and using the vi editor, edit the file/home/gpadmin/.bash_profile.
+
+
+
+[gpadmin@mdw gpconfigs] $** cd**  
+<v:shape id="Picture_x0020_95" o:spid="_x0000_i1475" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5ccba48.PNG" style="width: 458pt; height: 62pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image063.png" o:title="SNAGHTML5ccba48.PNG"></v:imagedata></v:shape>
+
+2.     Add the following entries to the bottom of the file using vi:
+
+**MASTER_DATA_DIRECTORY=/data/master/gpseg-1**
+
+**export MASTER_DATA_DIRECTORY**
+
+**source /usr/local/greenplum-db/greenplum_path.sh  
+
+**
+
+<v:shape id="Picture_x0020_1472" o:spid="_x0000_i1474" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5d02f96.PNG" style="width: 458pt; height: 208pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image064.png" o:title="SNAGHTML5d02f96.PNG"></v:imagedata></v:shape>
+
+**3. **Run the command below to make the changes active immediately.  
+[gpadmin@mdw ~]$ **source .bash_profile**
+
+<v:shape id="Picture_x0020_1473" o:spid="_x0000_i1473" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5d0b6fd.PNG" style="width: 458pt; height: 1in; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image065.png" o:title="SNAGHTML5d0b6fd.PNG"></v:imagedata></v:shape>
+| 12.   | Execute the gpstate** **utility to verify the Greenplum instance status summary.
+|  | <v:shape id="Picture_x0020_1475" o:spid="_x0000_i1472" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5d24a56.PNG" style="width: 458pt; height: 652pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image066.png" o:title="SNAGHTML5d24a56.PNG"></v:imagedata></v:shape>
+| **13.    ** | The next step is to manually add a standby master to the Greenplum Database that you just created. Run the gpinitstandby utility to do this.
+
+
+
+[gpadmin@mdw ]$  **gpinitstandby -s smdw**
+
+<v:shape id="Picture_x0020_1480" o:spid="_x0000_i1471" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5d7c159.PNG" style="width: 458pt; height: 379pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image067.png" o:title="SNAGHTML5d7c159.PNG"></v:imagedata></v:shape>
+
+Press **y** to continue.
+| 14.     | This screen shows that the gpinitstandby ended with no errors.
+
+<v:shape id="Picture_x0020_1481" o:spid="_x0000_i1470" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5ddb336.PNG" style="width: 458pt; height: 282pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image068.png" o:title="SNAGHTML5ddb336.PNG"></v:imagedata></v:shape>
+
+
+| 15.   | Run the gpstate -f  ( the -f  option displays the details of the standby master ( smdw )  ) utility to verify that the standby master was created and is synchronized with the master.
+
+[gpadmin@mdw ]$ **gpstate -f**
+
+<v:shape id="Picture_x0020_1482" o:spid="_x0000_i1469" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5de6a16.PNG" style="width: 458pt; height: 462pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image069.png" o:title="SNAGHTML5de6a16.PNG"></v:imagedata></v:shape>
+| 16.   | Copy the file /home/gpadmin/.bash_profile to smdw using the scp or gpscp command:
+
+
+
+[gpadmin@mdw ~]$ **scp /home/gpadmin/.bash_profile smdw:**
+
+**<v:shape id="Picture_x0020_1377" o:spid="_x0000_i1468" type="#_x0000_t75" style="width: 454pt; height: 118pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image070.png" o:title=""></v:imagedata></v:shape>**
+| 17.   | Create the /data/mirror directory on all segment hosts within the cluster. After creating the directory, you must change the ownership of the directory so that it is owned by the gpadmin user account.
+
+1.     Switch to the root user with the following command:   
+[gpadmin@mdw ~]$ **su -**   
+
+
+
+2.     Enter the password, Piv0tal.  
+
+
+
+3.     Source the greenplum_path.sh file to access the Greenplum binaries:   
+[root@mdw ~]#** source \  
+/usr/local/greenplum-db/greenplum_path.sh  
+
+**
+
+4.     Use gpssh to connect to sdw1 and sdw2 and create the mirror directory,/data/mirror:   
+[root@mdw ~]#** gpssh -h sdw1 -h sdw2 -e 'mkdir /data/mirror'  
+
+**
+
+5.     Change the ownership of these directories to gpadmin using the gpssh command:   
+[root@mdw ~]#** gpssh -h sdw1 -h sdw2 -e 'chown \  
+gpadmin:gpadmin /data/mirror'**  
+Note: Steps 4 and 5 can be combined into a single command by using a semicolon to separate the mkdir and chown statements.  
+
+
+
+6.     Exit from the root account session:   
+[root@mdw ~]#** exit**
+
+<v:shape id="Picture_x0020_1491" o:spid="_x0000_i1467" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5e2643d.PNG" style="width: 446pt; height: 208pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image071.png" o:title="SNAGHTML5e2643d.PNG"></v:imagedata></v:shape>
+| 18.   | The next step is to manually add mirror segments to the Greenplum Database that you just created. Run the gpaddmirrors utility to do this.
+
+
+
+[gpadmin@mdw ]$ **gpaddmirrors**
+
+When prompted, type in the mirror segment data directory and press **Enter**:
+
+**/data/mirror**
+
+<v:shape id="Picture_x0020_1492" o:spid="_x0000_i1466" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5e304de.PNG" style="width: 446pt; height: 170pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image072.png" o:title="SNAGHTML5e304de.PNG"></v:imagedata></v:shape>
+| 19.   | The following screen shows the configuration output from the gpaddmirrors utility:
+
+
+
+<v:shape id="Picture_x0020_1499" o:spid="_x0000_i1465" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5e65e25.PNG" style="width: 446pt; height: 454pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image073.png" o:title="SNAGHTML5e65e25.PNG"></v:imagedata></v:shape>
+|  | <v:shape id="Picture_x0020_1501" o:spid="_x0000_i1464" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5e7076e.PNG" style="width: 446pt; height: 272pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image074.png" o:title="SNAGHTML5e7076e.PNG"></v:imagedata></v:shape>
+
+
+
+Press **y** to continue.
+| 20.   | This screen shows that the gpaddmirrors ended with no errors.
+
+<v:shape id="Picture_x0020_1502" o:spid="_x0000_i1463" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5e80990.PNG" style="width: 446pt; height: 593pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image075.png" o:title="SNAGHTML5e80990.PNG"></v:imagedata></v:shape>
+
+
+|  | You can use the gpstate -s utility to check that the mirror segments are being synchronized with their primary segments. This utility will also indicate when the mirrors are fully synchronized.
+
+
+
+[gpadmin@mdw ]$ **gpstate -s**
+| 21.   | Run the gpstate** **utility to verify that the Greenplum instance status summary includes the new mirrors that were just added.
+
+
+
+<v:shape id="Picture_x0020_1503" o:spid="_x0000_i1462" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5ea201c.PNG" style="width: 446pt; height: 593pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image076.png" o:title="SNAGHTML5ea201c.PNG"></v:imagedata></v:shape>
+|  | <v:shape id="Picture_x0020_96" o:spid="_x0000_i1461" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5eae77f.PNG" style="width: 446pt; height: 357pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image077.png" o:title="SNAGHTML5eae77f.PNG"></v:imagedata></v:shape>
+|====
+
+
+
+
+
+
+
+|====
+| **Step** | **Action**
+| 1.      | If not already connected to mdw, open a terminal session to mdw and log in as root with the password,Piv0tal.
+
+Switch to gpadmin user.  If you were already in the gpadmin session from the previous lab task, you can skip this step.
+
+[root@mdw ~]# **su - gpadmin**
+
+<v:shape id="Picture_x0020_97" o:spid="_x0000_i1460" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5ed4873.PNG" style="width: 446pt; height: 62pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image078.png" o:title="SNAGHTML5ed4873.PNG"></v:imagedata></v:shape>
+| 2.      | You will now delete the Greenplum Database that you created using the gpdeletesystem utility.
+
+The -d option is pointing at the directory where the master database instance was created.
+
+
+
+[gpadmin@mdw ~]$ **gpdeletesystem -d /data/master/gpseg-1**
+
+<v:shape id="Picture_x0020_98" o:spid="_x0000_i1459" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5ef1d10.PNG" style="width: 458pt; height: 518pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image079.png" o:title="SNAGHTML5ef1d10.PNG"></v:imagedata></v:shape>
+
+Press **y** to continue.
+| 3.      | <v:shape id="Picture_x0020_134" o:spid="_x0000_i1458" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6bc1ed8.PNG" style="width: 458pt; height: 119pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image080.png" o:title="SNAGHTML6bc1ed8.PNG"></v:imagedata></v:shape>
+
+The utility will warn you one more time about deleting the database, and prompt you for confirmation.
+
+Press **y** to continue.
+
+The utility should complete successfully as shown here.
+
+<v:shape id="Picture_x0020_101" o:spid="_x0000_i1457" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5f15214.PNG" style="width: 458pt; height: 131pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image081.png" o:title="SNAGHTML5f15214.PNG"></v:imagedata></v:shape>
+| 4.      | Change to the /home/gpadmin/gpconfigs directory.
+
+[gpadmin@mdw ~]$ **cd gpconfigs**
+
+<v:shape id="Picture_x0020_102" o:spid="_x0000_i1456" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5f1e3f7.PNG" style="width: 458pt; height: 63pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image082.png" o:title="SNAGHTML5f1e3f7.PNG"></v:imagedata></v:shape>
+| 5.      | <table class="MsoNormalTable" border="1" cellspacing="0" cellpadding="0" style="border-collapse: collapse; border: none;"><tbody><tr style="height: 45.35pt;"><td width="438" valign="top" style="width: 438pt; border: none; padding: 0in 5.4pt; height: 45.35pt;">
+Using vi, edit the gpinitsystem_config** **file and replace the highlighted sections with the following:
+
+Scroll down to the **OPTIONAL MIRROR PARAMETERS **section of the file and perform the following tasks:
+
+1. Uncomment the lines shown in the snapshot.
+
+2. Replace the declare line with the following:
+
+
+
+**declare -a MIRROR_DATA_DIRECTORY=(/data/mirror)**
+
+
+</td></tr></tbody></table>
+<v:shape id="Picture_x0020_104" o:spid="_x0000_i1455" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML61695b9.PNG" style="width: 458pt; height: 255pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image083.png" o:title="SNAGHTML61695b9.PNG"></v:imagedata></v:shape> | Using vi, edit the gpinitsystem_config** **file and replace the highlighted sections with the following:
+
+Scroll down to the **OPTIONAL MIRROR PARAMETERS **section of the file and perform the following tasks:
+
+1. Uncomment the lines shown in the snapshot.
+
+2. Replace the declare line with the following:
+
+
+
+**declare -a MIRROR_DATA_DIRECTORY=(/data/mirror)**
+
+
+| Using vi, edit the gpinitsystem_config** **file and replace the highlighted sections with the following:
+
+Scroll down to the **OPTIONAL MIRROR PARAMETERS **section of the file and perform the following tasks:
+
+1. Uncomment the lines shown in the snapshot.
+
+2. Replace the declare line with the following:
+
+
+
+**declare -a MIRROR_DATA_DIRECTORY=(/data/mirror)**
+
+
+| 6.      | The final file appears as follows:
+
+<v:shape id="Picture_x0020_105" o:spid="_x0000_i1454" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6181582.PNG" style="width: 458pt; height: 262pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image084.png" o:title="SNAGHTML6181582.PNG"></v:imagedata></v:shape>
+
+
+
+This is a read-only file. Use :**wq! **to save the file.
+| 7.      | Run the gpinitsystem utility to create a Greenplum Database system using the values defined ingpinitsystem_config. The command is shown below:
+
+gpinitsystem -c gpinitsystem_config -h hostfile_gpinitsystem \  
+-s standby_master_hostname -S
+
+·       standby_master_hostname** **is a variable and should be replaced with the standby hostname of your pod.
+
+·       -s is an option used for a redundant system with a standby server. For more information on this utility, refer to Greenplum Database Installation Guide.
+
+·       -S** **is the option used to create a spread mirror configuration. For more information on this utility, refer to Greenplum Database Installation Guide.
+
+[gpadmin@mdw gpconfigs]$ **gpinitsystem -c gpinitsystem_config \  
+-h hostfile_gpinitsystem -s smdw -S**
+| 8.      | The utility displays the master, standby master, primary segments, and mirror segments configuration. It also asks you whether or not you want to continue with the Greenplum creation.
+
+<v:shape id="Picture_x0020_107" o:spid="_x0000_i1453" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML6198fff.PNG" style="width: 458pt; height: 447pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image085.png" o:title="SNAGHTML6198fff.PNG"></v:imagedata></v:shape>
+
+Press **y** to continue.
+|  | This screen shows that the gpinitsystem completed with no errors.
+
+<v:shape id="Picture_x0020_108" o:spid="_x0000_i1452" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML61a7925.PNG" style="width: 458pt; height: 564pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image086.png" o:title="SNAGHTML61a7925.PNG"></v:imagedata></v:shape>
+| 9.      | Run the gpstate** **utility to verify the Greenplum instance status summary.
+
+
+
+<v:shape id="Picture_x0020_111" o:spid="_x0000_i1451" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML61bbb23.PNG" style="width: 458pt; height: 564pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image087.png" o:title="SNAGHTML61bbb23.PNG"></v:imagedata></v:shape>
+| 10.   | Change to the home directory.
+
+
+
+[gpadmin@mdw ~]$ **cd**
+
+<v:shape id="Picture_x0020_113" o:spid="_x0000_i1450" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML678b359.PNG" style="width: 458pt; height: 63pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image088.png" o:title="SNAGHTML678b359.PNG"></v:imagedata></v:shape>
+|====
+
+
+
+End of Lab Exercise**
+
+
+  

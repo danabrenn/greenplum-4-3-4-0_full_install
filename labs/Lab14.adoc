@@ -1,0 +1,177 @@
+= 14. Managing the Greenplum Database
+
+
+
+|====
+|   
+
+**Purpose:** | In this lab, you will start, stop, and restart the Greenplum Database. You will also execute commands that provide information on the state of Greenplum.
+
+Greenplum clients must be executed from the master instance while logged in as a Greenplum superuser account.
+| 
+| **Tasks:** | Students perform the following task: Perform system administration tasks on the Greenplum environment.
+| 
+| **References:** | Module 6: Database Management and Archiving
+
+·       Lesson: Managing the Greenplum Database
+|====
+
+|====
+| **Step** | **Action**
+| 1.      | If not already connected to mdw, log in as gpadmin** **on your master server and stop the Greenplum database with the following command :
+
+[gpadmin@mdw ~]$ **gpstop**
+
+<v:shape id="Picture_x0020_23" o:spid="_x0000_i1201" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML152d619e.PNG" style="width: 458pt; height: 262pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image337.png" o:title="SNAGHTML152d619e.PNG"></v:imagedata></v:shape>
+
+When prompted, answer **y** to proceed with shutting down the instances.
+| 2.      | The gpstart command is used to start the Greenplum database defined by the $MASTER_DATA_DIRECTORYparameter or as specified with the -d option. To start the Greenplum database in restrictive mode where only the Greenplum superuser can connect, issue the following command in UNIX as gpadmin:
+
+[gpadmin@mdw ~]$ **gpstart -R**
+
+<v:shape id="Picture_x0020_1378" o:spid="_x0000_i1200" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1547d1fd.PNG" style="width: 458pt; height: 379pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image338.png" o:title="SNAGHTML1547d1fd.PNG"></v:imagedata></v:shape>
+
+When prompted, answer **y** to proceed with starting the instances. You can skip any prompts by including the -aoption as a part of the command.
+
+This mode is useful if you need to perform some isolated work in the environment and need to ensure other users cannot connect to the Greenplum Database.
+| 3.      | Verify the state of the cluster to ensure that the database is running:
+
+[gpadmin@mdw ~]$ **gpstate**
+
+<v:shape id="Picture_x0020_1379" o:spid="_x0000_i1199" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML154bb615.PNG" style="width: 458pt; height: 262pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image339.png" o:title="SNAGHTML154bb615.PNG"></v:imagedata></v:shape>
+| 4.      | Verify the student account that you created in earlier labs cannot connect to the database.
+
+[gpadmin@mdw ~]$ **psql -U student faa**
+
+<v:shape id="Picture_x0020_1381" o:spid="_x0000_i1198" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1551b0c7.PNG" style="width: 458pt; height: 71pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image340.png" o:title="SNAGHTML1551b0c7.PNG"></v:imagedata></v:shape>
+| 5.      | There are times when you want to change parameters of the database by editing either pg_hba.confor postgresql.conf, but do not want to shut down the database to make it aware of the changes. The gpstop -u command lets the master re-read the configuration files without shutting down services.
+
+Using vi, edit the pg_hba.conf file and add the following line at the end:
+
+**host    all            all       127.0.0.1/32         trust**
+
+The new entry allows all users from 127.0.0.1 to connect to all of the databases within the Greenplum Database cluster.
+
+[gpadmin@mdw ~]$ **vi $MASTER_DATA_DIRECTORY**/pg_hba.conf
+
+<v:shape id="Picture_x0020_1384" o:spid="_x0000_i1197" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1554df27.PNG" style="width: 458pt; height: 262pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image341.png" o:title="SNAGHTML1554df27.PNG"></v:imagedata></v:shape>
+| 6.      | Read the new configuration into the database by issuing the following command:
+
+[gpadmin@mdw ~]$ **gpstop -u**
+
+<v:shape id="Picture_x0020_1385" o:spid="_x0000_i1196" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML155622ac.PNG" style="width: 458pt; height: 197pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image342.png" o:title="SNAGHTML155622ac.PNG"></v:imagedata></v:shape>
+
+This will reload all the configuration files without shutting the database down.
+| 7.      | Log in to PSQL and check for skew on the main fact table, factontimeperformance:
+
+[gpadmin@mdw ~]$ **psql faa**
+| 8.      | faa=# **SELECT gp_segment_id, count(*) FROM factontimeperformance**
+
+**GROUP BY gp_segment_id;**
+
+<v:shape id="Picture_x0020_1386" o:spid="_x0000_i1195" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1558abf7.PNG" style="width: 458pt; height: 128pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image343.png" o:title="SNAGHTML1558abf7.PNG"></v:imagedata></v:shape>
+| 9.      | Check for processing skew:
+
+faa=# **SELECT gp_segment_id, count(*) FROM factontimeperformance WHERE cancelled='false' GROUP BY gp_segment_id;  
+**<v:shape id="Picture_x0020_1389" o:spid="_x0000_i1194" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15599f98.PNG" style="width: 458pt; height: 127pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image344.png" o:title="SNAGHTML15599f98.PNG"></v:imagedata></v:shape>
+| 10.   | Exit the database.
+
+faa=# **\q**
+| 11.   | There may be times when you need to perform administrative duties on the segment hosts from the master. You can use the gpssh command from UNIX as gpadmin. The/rawdata/Binaries/hostfile_exkeys file contains the names of all hosts in this cluster. You can use this file to query the hosts.
+
+[gpadmin@mdw ~]$ **gpssh -f /rawdata/Binaries/hostfile_exkeys df**
+
+<v:shape id="Picture_x0020_37" o:spid="_x0000_i1193" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML155e01e3.PNG" style="width: 458pt; height: 349pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image345.png" o:title="SNAGHTML155e01e3.PNG"></v:imagedata></v:shape>
+| 12.   | After a database has been running for a long time, its catalog can become bloated, especially if there are a large number of UPDATEs and DELETEs to the database environment. A bloated system requires regular maintenance consisting of scheduled VACUUMs. These systems may periodically require a fullVACUUM ANALYZE to clean up space.
+
+It is safer to run a regular VACUUM. A VACUUM FULL can slow down the performance of the system dramatically. It should be executed when in maintenance mode. To run a vacuum on only one catalog table, for example pg_class, execute the following command:
+
+[gpadmin@mdw ~]$ **psql faa -c 'vacuum analyze pg_catalog.pg_class;'**
+
+<v:shape id="Picture_x0020_64" o:spid="_x0000_i1192" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML156c0222.PNG" style="width: 458pt; height: 70pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image346.png" o:title="SNAGHTML156c0222.PNG"></v:imagedata></v:shape>
+
+The pg_class table keeps the object names in the database. If there are a lot of updates to the table, such as with creating and dropping objects, the table can become bloated and negatively impact the system.
+
+**Note:** You do not directly make changes to this table. This table is affected by updates in your environment, such as when you create or delete a table.
+| 13.   | To run a VACUUM ANALYZE on all catalog tables create the following script and execute it.
+
+1.     Using vi, create a new file called **gp_vacuum_analyze** with the following content:
+
+**#!/bin/bash  
+DBNAME="faa"  
+VCOMMAND="VACUUM  ANALYZE "**
+
+**psql -tc "select '$VCOMMAND' || ' pg_catalog.' || relname || ';' from pg_class a,pg_namespace b where a.relnamespace=b.oid and b.nspname= 'pg_catalog' and a.relkind='r'" $DBNAME | psql -a $DBNAME**
+
+
+
+2. Save the file and exit vi.
+
+<v:shape id="Picture_x0020_67" o:spid="_x0000_i1191" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML156e1b6c.PNG" style="width: 458pt; height: 116pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image347.png" o:title="SNAGHTML156e1b6c.PNG"></v:imagedata></v:shape>
+
+
+
+3. Change the permissions on the file so that it is executable:  
+**chmod 755 gp_vacuum_analyze**
+
+
+
+4. Execute the script by typing the following:  
+**./gp_vacuum_analyze**
+|  | <v:shape id="Picture_x0020_70" o:spid="_x0000_i1190" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML156ef028.PNG" style="width: 458pt; height: 350pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image348.png" o:title="SNAGHTML156ef028.PNG"></v:imagedata></v:shape>
+
+**Note:** Recall that it is recommended that you execute VACUUM on a regular schedule and ANALYZEseparately on its own schedule.
+| 14.   | Open a PSQL session and log in as **gpadmin** to the **faa** database.
+
+[gpadmin@mdw ~]$ **psql faa**
+| 15.   | Check the size of the database using the following command:
+
+faa=#  **SELECT * from gp_toolkit.gp_size_of_database;**
+
+<v:shape id="Picture_x0020_73" o:spid="_x0000_i1189" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML157426f1.PNG" style="width: 458pt; height: 158pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image349.png" o:title="SNAGHTML157426f1.PNG"></v:imagedata></v:shape>
+| 16.   | Retrieve the size of each relational table in user schemas of the user database.
+
+faa=#  **SELECT * from gp_toolkit.gp_size_of_table_disk;**
+
+ <v:shape id="Picture_x0020_76" o:spid="_x0000_i1188" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15749b36.PNG" style="width: 458pt; height: 349pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image350.png" o:title="SNAGHTML15749b36.PNG"></v:imagedata></v:shape>
+| 17.   | Retrieve the size of all user schemas in the user database.
+
+faa=#   **SELECT * from gp_toolkit.gp_size_of_schema_disk;**
+
+<v:shape id="Picture_x0020_79" o:spid="_x0000_i1187" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1578f882.PNG" style="width: 458pt; height: 119pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image351.png" o:title="SNAGHTML1578f882.PNG"></v:imagedata></v:shape>
+| 18.   | Retrieve the size of all user indexes in the user database.
+
+faa=#   **SELECT * from gp_toolkit.gp_size_of_index;**
+
+<v:shape id="Picture_x0020_1484" o:spid="_x0000_i1186" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML157962e7.PNG" style="width: 458pt; height: 157pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image352.png" o:title="SNAGHTML157962e7.PNG"></v:imagedata></v:shape>
+| 19.   | Retrieve the cumulative size of all user indexes in a table, list this total size for each table in the user database.
+
+faa=#  **SELECT * from gp_toolkit.gp_size_of_all_table_indexes;**
+
+<v:shape id="Picture_x0020_176" o:spid="_x0000_i1185" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1579c4e4.PNG" style="width: 458pt; height: 117pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image353.png" o:title="SNAGHTML1579c4e4.PNG"></v:imagedata></v:shape>
+| 20.   | Retrieve the uncompressed table size.
+
+faa=#   **SELECT * from gp_toolkit.gp_size_of_table_uncompressed;**
+
+<v:shape id="Picture_x0020_177" o:spid="_x0000_i1184" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML157a2201.PNG" style="width: 458pt; height: 349pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image354.png" o:title="SNAGHTML157a2201.PNG"></v:imagedata></v:shape>
+| 21.   | Retrieve the total free disk space in Kbytes for each segment server and the file systems included as part of the Greenplum Database.
+
+faa=#   **SELECT * from gp_toolkit.gp_disk_free;**
+
+<v:shape id="Picture_x0020_187" o:spid="_x0000_i1183" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML157b7030.PNG" style="width: 458pt; height: 118pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image355.png" o:title="SNAGHTML157b7030.PNG"></v:imagedata></v:shape>
+| 22.   | Exit the database.
+| 23.   | Restart the database in regular mode so that all users can connect to it. The -r option is used to restart the database.
+
+[gpadmin@mdw ~]$ **gpstop -ar**
+
+<v:shape id="Picture_x0020_1006" o:spid="_x0000_i1182" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1619c610.PNG" style="width: 458pt; height: 349pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image356.png" o:title="SNAGHTML1619c610.PNG"></v:imagedata></v:shape>
+|  | **Summary**
+
+Checking table skew after loading is one of the most important ways to validate the efficiency of your distribution keys. Check the skew often on large tables that are frequently loaded, as data demographics may have changed. This is important on all Greenplum systems regardless of size. On smaller systems, there are fewer segments involved so the distribution is not over as many units of parallelism. On larger systems the hashing algorithm, particularly on non-unique distribution keys, may hash many more rows to a single segment.
+
+Check the size of databases and regularly VACUUM the system to reduce the chances of bloat.
+|====
+
+
+
+End of Lab Exercise

@@ -1,0 +1,182 @@
+= 19. Explain the EXPLAIN Plan – Analyzing Queries
+
+
+
+|====
+|   
+
+**Purpose:** | In this lab, you will be given a set of queries to analyze. The data that you have previously inserted deliberately does not have statistics collected for it. Do not use the EXPLAIN or ANALYZE commands until you are instructed to do so. You will want to compare the before and after effects of statistics.
+| 
+| **Tasks:** | Students perform the following task: Analyze queries.
+| 
+| **References:** | Module 8 – Performance Analysis and Tuning
+
+·       Explain the Explain Plan – Analyzing Queries
+|====
+
+
+|====
+| **Step** | **Action**
+|  | pgAdmin III offers a graphical interface to interact with the Greenplum Database. The tool can be used to view database objects, execute queries, and perform some management tasks in the database. You will configure pgAdmin III to make it easier to execute and the labs in this exercise. Feel free to use it for other exercises.
+
+You must first configure pgAdmin III by completing two main tasks:
+
+·       Updating the pg_hba.conf file to provide access to connections from your Windows environment where you will be running pgAdmin III
+
+·       Creating a connection to the database within pgAdmin III
+| 1.      | From your terminal connection the master server, mdw, modify the**$MASTER_DATA_DIRECTORY/pg_hba.conf** file and add the following entry to the bottom of the file:
+
+**host    all     gpadmin         172.16.1.15/32  trust**
+
+<v:shape id="Picture_x0020_1274" o:spid="_x0000_i1068" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML203c04e9.PNG" style="width: 458pt; height: 205pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image470.png" o:title="SNAGHTML203c04e9.PNG"></v:imagedata></v:shape>
+
+Save and exit the file.
+| 2.      | Re-read the configuration file with the **gpstop** command.
+
+<v:shape id="Picture_x0020_1276" o:spid="_x0000_i1067" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML203d0d13.PNG" style="width: 458pt; height: 197pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image471.png" o:title="SNAGHTML203d0d13.PNG"></v:imagedata></v:shape>
+| 3.      | Double-click the pgAdmin III icon on your desktop to start the application.
+| 4.      | Click the icon to add a connection to the environment.
+
+<v:shape id="Picture_x0020_1270" o:spid="_x0000_i1066" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML2035968d.PNG" style="width: 448pt; height: 264pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image472.png" o:title="SNAGHTML2035968d.PNG"></v:imagedata></v:shape>
+| 5.      | Provide the following information to register your server connection and click **OK **to complete the process:
+
+·       Name: training
+
+·       Host: 172.16.1.11
+
+·       Port: 5432
+
+·       Password: gpadmin
+
+<v:shape id="Picture_x0020_1271" o:spid="_x0000_i1065" type="#_x0000_t75" style="width: 343pt; height: 355pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image473.png" o:title=""></v:imagedata></v:shape>
+| 6.      | A warning will be displayed emphasizing the issues with storing your password. In your production environment, you would not do this. However, in this lab environment, you will proceed as it simplifies and eases your access.
+
+Click **OK **to proceed.
+
+<v:shape id="Picture_x0020_1272" o:spid="_x0000_i1064" type="#_x0000_t75" style="width: 388pt; height: 313pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image474.png" o:title=""></v:imagedata></v:shape>
+
+
+| 7.      | The session will now be saved. Double-click the session under the Servers category to initiate a connection to the database.
+
+<v:shape id="Picture_x0020_1278" o:spid="_x0000_i1063" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML2041eac4.PNG" style="width: 485pt; height: 343pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image475.png" o:title="SNAGHTML2041eac4.PNG"></v:imagedata></v:shape>
+
+You now have access to the database through pgAdmin III.
+|====
+
+
+**  
+**
+
+
+|====
+| **Step** | **Action**
+|  | You can choose to use pgAdmin III to view the explain plans for the queries you will examine in this task. Instructions will be provided for both for the first exercise. Remaining exercises will use PSQL. However, feel free to use pgAdmin III to view the query plans or execute queries.
+| 1.      | If you wish to view the query plans in PSQL, proceed to step 8.
+
+In pgAdmin III, click on the **datamart **database. This will be the database used for query executions.
+
+<v:shape id="Picture_x0020_1280" o:spid="_x0000_i1062" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML205e6706.PNG" style="width: 188pt; height: 207pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image476.png" o:title="SNAGHTML205e6706.PNG"></v:imagedata></v:shape>
+| 2.      | Click the Execute Arbitrary SQL queries icon to proceed.
+
+<v:shape id="Picture_x0020_1279" o:spid="_x0000_i1061" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML205b0a75.PNG" style="width: 484pt; height: 124pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image477.png" o:title="SNAGHTML205b0a75.PNG"></v:imagedata></v:shape>
+| 3.      | Click the **Open file **icon.
+
+<v:shape id="Picture_x0020_1281" o:spid="_x0000_i1060" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML20601d88.PNG" style="width: 384pt; height: 132pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image478.png" o:title="SNAGHTML20601d88.PNG"></v:imagedata></v:shape>
+| 4.      | From the Documents folder, select the file, gp }sql } load_files } adv_sql_files } lab5query1 and either double-click the filename or click **Open**.
+
+<v:shape id="Picture_x0020_1284" o:spid="_x0000_i1059" type="#_x0000_t75" style="width: 468pt; height: 312pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image479.png" o:title=""></v:imagedata></v:shape>
+| 5.      | The first line of the query is the explain command. Remove this line.
+
+<v:shape id="Picture_x0020_1285" o:spid="_x0000_i1058" type="#_x0000_t75" style="width: 468pt; height: 178pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image480.png" o:title=""></v:imagedata></v:shape>
+
+While you can leave this line in the file and use the Execute query button to view the text of the explain plan, we will instead use the pgAdmin III explain plan method to view a graphical breakdown of the plan.
+| 6.      | Click the **Explain query** icon to view the explain plan.
+
+<v:shape id="Picture_x0020_1286" o:spid="_x0000_i1057" type="#_x0000_t75" style="width: 468pt; height: 221pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image481.png" o:title=""></v:imagedata></v:shape>
+| 7.      | The Output pane displays a graphical analysis of the query in the Explain tab.
+
+<v:shape id="Picture_x0020_1287" o:spid="_x0000_i1056" type="#_x0000_t75" style="width: 468pt; height: 188pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image482.png" o:title=""></v:imagedata></v:shape>
+
+You can also view a textual analysis by clicking the Data Output tab.
+
+<v:shape id="Picture_x0020_1289" o:spid="_x0000_i1055" type="#_x0000_t75" style="width: 468pt; height: 189pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image483.png" o:title=""></v:imagedata></v:shape>
+
+Proceed to step 10.
+| 8.      | Complete the following steps to view the explain plan in PSQL.
+
+Access the datamart database as gpadmin.
+
+[gpadmin@mdw ~]$ **psql datamart**
+| 9.      | Execute an explain plan for a simple query without analyzing the data. This query can be found in the file/home/gp/sql/load_files/adv_sql_files/lab5query1.sql.
+
+datamart=# **\i /home/gp/sql/load_files/adv_sql_files/lab5query1.sql**
+
+<v:shape id="Picture_x0020_1296" o:spid="_x0000_i1054" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML20728c51.PNG" style="width: 458pt; height: 427pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image484.png" o:title="SNAGHTML20728c51.PNG"></v:imagedata></v:shape>
+
+The screenshot shows the text of the explain plan being executed. You are executing the query directly from the file provided.
+| 10.   | Which tables are being scanned?
+
+_________________________________________________________________
+
+_________________________________________________________________
+
+_________________________________________________________________
+| 11.   | Is there any data motion or Broadcasts? Which table(s)?
+
+_________________________________________________________________
+
+_________________________________________________________________
+
+_________________________________________________________________
+| 12.   | How could you reduce the number of tables being scanned?
+
+_________________________________________________________________
+
+_________________________________________________________________
+
+_________________________________________________________________
+| 13.   | If you add a WHERE clause to get transactions for the month of May 2008 only, how does the explain plan change? This SQL can be found in the file lab5query1a.sql.
+
+**AND transaction.transdate BETWEEN '2008-05-01' AND '2008-05-31'**
+
+_________________________________________________________________
+
+_________________________________________________________________
+
+_________________________________________________________________
+| 14.   | Execute another explain plan for a simple query without analyzing the data. This query is found in the file/home/gp/sql/load_files/adv_sql_files/lab5query2.sql:  
+
+
+
+datamart=# **\i /home/gp/sql/load_files/adv_sql_files/lab5query2.sql**
+
+<v:shape id="Picture_x0020_32" o:spid="_x0000_i1053" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML39d62ebd.PNG" style="width: 458pt; height: 457pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image485.png" o:title="SNAGHTML39d62ebd.PNG"></v:imagedata></v:shape>
+| 15.   | Which tables are being scanned?
+
+_________________________________________________________________
+
+_________________________________________________________________
+
+_________________________________________________________________
+| 16.   | Is there any data motion or Broadcasts? Which table(s)?
+
+_________________________________________________________________
+
+_________________________________________________________________
+
+_________________________________________________________________
+| 17.   | If you partitioned your tables, how many “transaction” tables are being scanned? Why?
+
+_________________________________________________________________
+
+_________________________________________________________________
+
+_________________________________________________________________
+|  | **Summary**
+
+You should execute an EXPLAIN statement with any new SQL that accesses large tables, any SQL that is running slowly, or against data objects that are new to the system. This helps you to determine, in advance of going into production, the likely path that the optimizer will take when performing the query. The EXPLAIN utility can produce a plan for any SQL statement, except EXPLAIN itself, so you are encouraged to take advantage of this functionality as often as possible.
+|====
+
+
+
+End of Lab Exercise

@@ -1,0 +1,217 @@
+= 23. PostgreSQL Functions
+
+
+
+|====
+|   
+
+**Purpose:** | In this lab, you will create functions to perform simple, repeatable queries and tasks. You will create functions that use the SQL and the PL/pgSQL language. You will be required to create one user defined data type in order to correctly return data.
+| 
+| **Tasks:** | Students perform the following tasks:
+
+·       Create SQL functions
+
+·       Create PL/pgSQL functions
+
+| 
+| **References:** | Module 9 – Developing Reports Using Advanced SQL
+
+·       Lesson: PostgreSQL Functions
+|====
+
+|====
+| **Step** | **Action**
+| 1.      | Connect to the datamart database as gpadmin.
+| 2.      | Create an overloaded SQL function that returns a row or rows from the store dimension table with a parameter of either the storeid or the state. You can create the procedure in the public schema.
+
+For hints on how to create the function, refer to the lab example in the/home/gp/sql/load_files/adv_sql_files/lab10query1.sql file.
+
+Remember that you want to return a SETOF to get more than one row.
+
+datamart=# **CREATE OR REPLACE FUNCTION public.GetStore (whichstate CHAR(2))**
+
+ **  RETURNS SETOF store AS $$**
+
+**SELECT ***
+
+ **  FROM dimensions.store**
+
+**WHERE state=$1;**
+
+**$$**
+
+**LANGUAGE SQL;**
+
+<v:shape id="Picture_x0020_1288" o:spid="_x0000_i1032" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a32f71c.PNG" style="width: 458pt; height: 140pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image506.png" o:title="SNAGHTML3a32f71c.PNG"></v:imagedata></v:shape>
+
+
+
+datamart=# **CREATE OR REPLACE FUNCTION public.GetStore (whichid integer)**
+
+ **  RETURNS SETOF store AS $$**
+
+**SELECT ***
+
+ **  FROM dimensions.store**
+
+**WHERE storeid=$1;**
+
+**$$**
+
+**LANGUAGE SQL;**
+
+<v:shape id="Picture_x0020_1290" o:spid="_x0000_i1031" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a335532.PNG" style="width: 458pt; height: 128pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image507.png" o:title="SNAGHTML3a335532.PNG"></v:imagedata></v:shape>
+| 3.      | Test your function by selecting for the state of Missouri (MO) or any store id less than 30:
+
+datamart=# **SELECT * FROM public.GetStore('MO');  
+**datamart=# **SELECT * FROM public.GetStore(11);**<v:shape id="Picture_x0020_1291" o:spid="_x0000_i1030" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a49cfde.PNG" style="width: 458pt; height: 312pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image508.png" o:title="SNAGHTML3a49cfde.PNG"></v:imagedata></v:shape>
+| 4.      | Create an SQL function that takes as a parameter a table name (you can use any of the dimension tables) and returns the appropriate name column in uppercase. Call the function uppername. Create it in the public schema.
+
+For hints on how to create the function, refer to the lab example in the/home/gp/sql/load_files/adv_sql_files/lab10query2.sql file.
+
+datamart=# **CREATE FUNCTION public.UpperName (store)**
+
+**RETURNS text AS $$**
+
+ **   SELECT UPPER($1.storename);**
+
+**$$**
+
+**LANGUAGE SQL;**
+
+<v:shape id="Picture_x0020_1292" o:spid="_x0000_i1029" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a4a2dc6.PNG" style="width: 458pt; height: 107pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image509.png" o:title="SNAGHTML3a4a2dc6.PNG"></v:imagedata></v:shape>
+| 5.      | Test the function by selecting the storeid**, **storename**, **public.Uppername(store)**,**city columns from store.
+
+datamart=# **select storeid,storename,public.Uppername(store),city from store;**
+
+<v:shape id="Picture_x0020_1293" o:spid="_x0000_i1028" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a4a903f.PNG" style="width: 458pt; height: 457pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image510.png" o:title="SNAGHTML3a4a903f.PNG"></v:imagedata></v:shape>
+|====
+
+
+
+
+
+|====
+| **Step** | **Action**
+| 1.      | Create a PL/pgSQL function to join the transaction fact table with the store and customer dimensions to return the transaction columns (transid, transdate, salesamt, taxamt, checkamt, cashamt,ccamt, debitamt), the store columns (storename, city, state) and the customer columns (custname, city, state).
+
+Parameters are the starting and ending transaction dates. (HINT: The output will be a user defined data type.)
+
+First, create the user defined data type and call it ReportTypeA.
+
+datamart=# **CREATE TYPE ReportTypeA AS (**
+
+**transid    BIGINT,**
+
+**transdate  DATE,**
+
+**salesamt   NUMERIC,**
+
+**taxamt     NUMERIC,**
+
+**checkamt   NUMERIC,**
+
+**cashamt    NUMERIC,**
+
+**ccamt      NUMERIC,**
+
+**debitamt   NUMERIC,**
+
+**storename  CHARACTER VARYING,**
+
+**storecity  CHARACTER VARYING,**
+
+**storestate CHARACTER VARYING,**
+
+**custname   CHARACTER VARYING,**
+
+**custcity   CHARACTER VARYING,**
+
+**custstate  CHARACTER VARYING);**
+
+<v:shape id="Picture_x0020_1294" o:spid="_x0000_i1027" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a4b0d3b.PNG" style="width: 458pt; height: 202pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image511.png" o:title="SNAGHTML3a4b0d3b.PNG"></v:imagedata></v:shape>
+| 2.      | Create the function, RunReportA. Create the function in the public schema.
+
+datamart=# **CREATE OR REPLACE FUNCTION public.RunReportA**
+
+**  (IN StartDate DATE,** **IN EndDate   DATE)**
+
+**RETURNS SETOF ReportTypeA AS**
+
+**$BODY$**
+
+**DECLARE r ReportTypeA%rowtype;**
+
+**BEGIN**
+
+**FOR r IN SELECT  t.transid**
+
+ **                ,t.transdate**
+
+ **                ,t.salesamt**
+
+ **                ,t.taxamt**
+
+ **                ,t.checkamt**
+
+ **                ,t.cashamt**
+
+ **                ,t.ccamt**
+
+ **                ,t.debitamt**
+
+ **                ,s.storename**
+
+ **                ,s.city**
+
+ **                ,s.state**
+
+ **                ,c.custname**
+
+ **                ,c.city**
+
+ **                ,c.state**
+
+
+
+ **           FROM facts.transaction t**
+
+ **                INNER JOIN dimensions.store s**
+
+ **                ON s.storeid = t.storeid**
+
+ **                INNER JOIN dimensions.customer c**
+
+ **                ON c.customerid = t.customerid**
+
+ **          WHERE t.transdate BETWEEN StartDate AND EndDate LOOP**
+
+ **   RETURN NEXT r;**
+
+ **  -- return current row of SELECT**
+
+**END LOOP;**
+
+**RETURN;**
+
+**END**
+
+**$BODY$**
+
+**LANGUAGE plpgsql;**
+|  | <v:shape id="Picture_x0020_1295" o:spid="_x0000_i1026" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a4baec7.PNG" style="width: 458pt; height: 397pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image512.png" o:title="SNAGHTML3a4baec7.PNG"></v:imagedata></v:shape>
+| 3.      | Test the function by running a report for the dates, 2008-07-01 to 2008-07-07:
+
+datamart=# **select *from public.runreporta ('2008-07-01'::date, '2008-07-07'::date);**
+
+<v:shape id="Picture_x0020_1297" o:spid="_x0000_i1025" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML3a4c3506.PNG" style="width: 458pt; height: 457pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image513.png" o:title="SNAGHTML3a4c3506.PNG"></v:imagedata></v:shape>
+|  | **Summary**
+
+You may find that using functions to generate reports is a simple way to store SQL in the database to ensure that any user executing the query cannot change it and the query will produce consistent results.
+
+Functions provide a versatile way to perform complex transformation logic. Use functions in conjunction with temporary tables whenever you need to modify rows during ETL processing. Remember that you can also create temporary tables in the PL/pgSQL function!
+
+Use dynamic functions whenever you need to create ad-hoc SQL. This will again keep consistent and repeatable SQL stored in the database.
+|====
+
+End of Lab Exercise

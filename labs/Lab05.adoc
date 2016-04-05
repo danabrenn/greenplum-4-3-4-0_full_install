@@ -1,0 +1,202 @@
+= 5. Greenplum Database Server Configuration
+
+
+
+|====
+|   
+
+**Purpose:** | In this lab you will learn how to set configuration parameters in postgresql.conf and use theSHOW command in psql to examine the current values of configuration parameters. You will also learn how to set Greenplum global parameters on a per-session basis using the SET command in psql.
+| 
+| **Tasks:** | Students perform the following tasks:
+
+·       Set Configuration Parameters
+
+·       Configure host-based authentication
+| 
+| **References:** | Module 3 – Greenplum Database Tools, Utilities, and Internals
+
+·       Lesson: Greenplum Database Server Configuration
+|====
+
+|====
+| **Step** | **Action**
+| 1.      | Change to the data directory of your Greenplum Database master instance:
+
+[gpadmin@mdw ~]$ **cd $MASTER_DATA_DIRECTORY**
+
+[gpadmin@mdw gpseg-1]$ **ls**
+
+**  
+**<v:shape id="Picture_x0020_1405" o:spid="_x0000_i1397" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML12c6b84.PNG" style="width: 458pt; height: 152pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image141.png" o:title="SNAGHTML12c6b84.PNG"></v:imagedata></v:shape>
+| 2.      | In a text editor, edit the postgresql.conf file.
+
+[gpadmin@mdw gpseg-1]$  **vi postgresql.conf**
+
+<v:shape id="Picture_x0020_1407" o:spid="_x0000_i1396" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML12d15f6.PNG" style="width: 458pt; height: 56pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image142.png" o:title="SNAGHTML12d15f6.PNG"></v:imagedata></v:shape>
+| 3.      | Find the configuration parameter named log_min_messages. This parameter controls the level of detail written to the log files.
+
+Uncomment this line by removing the **#** preceding it. Change the value from warning to **info**.  
+**log_min_messages = info**
+
+<v:shape id="Picture_x0020_46" o:spid="_x0000_i1395" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML13330c6.PNG" style="width: 458pt; height: 262pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image143.png" o:title="SNAGHTML13330c6.PNG"></v:imagedata></v:shape>
+
+Save your changes and exit vi.
+| 4.      | The postgresql.conf file for the master instance must be reloaded so that the changes are picked up by the Greenplum Database. Use the **gpstop** utility to complete this task:
+
+[gpadmin@mdw gpseg-1]$ **gpstop -u**
+
+<v:shape id="Picture_x0020_45" o:spid="_x0000_i1394" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML12f7841.PNG" style="width: 458pt; height: 191pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image144.png" o:title="SNAGHTML12f7841.PNG"></v:imagedata></v:shape>
+| 5.      | Once the change has been loaded, start a psql session and check the value using the SHOW command to verify the log level was changed to **info**:
+
+[gpadmin@mdw gpseg-1]$ **psql postgres**
+
+postgres=# **SHOW log_min_messages;**
+
+**  
+**<v:shape id="Picture_x0020_47" o:spid="_x0000_i1393" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1340830.PNG" style="width: 458pt; height: 149pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image145.png" o:title="SNAGHTML1340830.PNG"></v:imagedata></v:shape>
+| 6.      | While still in psql, change the value of log_min_messages to debug1 using the SET command. This sets the parameter for the current session only.
+
+postgres=# **SET log_min_messages TO debug1;  
+
+**
+
+<v:shape id="Picture_x0020_48" o:spid="_x0000_i1392" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML135e593.PNG" style="width: 459pt; height: 1in; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image146.png" o:title="SNAGHTML135e593.PNG"></v:imagedata></v:shape>
+| 7.      | Check the value using the SHOW command to make sure it was changed to debug1:
+
+postgres=# **SHOW log_min_messages;**
+
+<v:shape id="Picture_x0020_50" o:spid="_x0000_i1391" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1368348.PNG" style="width: 458pt; height: 112pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image147.png" o:title="SNAGHTML1368348.PNG"></v:imagedata></v:shape>
+| 8.      | Exit the current psql session and start a new session.
+
+Run the SHOW command again. The value should be info again, the value you set inpostgresql.conf
+
+postgres=# **\q**
+
+[gpadmin@mdw gpseg-1]$ **psql postgres**
+
+postgres=# **SHOW log_min_messages;**
+
+<v:shape id="Picture_x0020_51" o:spid="_x0000_i1390" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1380cf1.PNG" style="width: 458pt; height: 161pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image148.png" o:title="SNAGHTML1380cf1.PNG"></v:imagedata></v:shape>
+| 9.      | Exit psql:
+
+postgres=# **\q**
+| 10.   | Using the gpconfig command, list the values of the log_min_messages parameter.
+
+[gpadmin@mdw gpseg-1]$ **gpconfig -s log_min_messages**
+
+<v:shape id="Picture_x0020_1439" o:spid="_x0000_i1389" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1bf7834.PNG" style="width: 458pt; height: 100pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image149.png" o:title="SNAGHTML1bf7834.PNG"></v:imagedata></v:shape>
+| 11.   | Use the gpconfig command to determine if the same command can be used to set thelog_min_messages parameter.
+
+[gpadmin@mdw gpseg-1]$ **gpconfig -l | grep log_min_messages**
+
+<v:shape id="Picture_x0020_65" o:spid="_x0000_i1388" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1c67a94.PNG" style="width: 458pt; height: 81pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image150.png" o:title="SNAGHTML1c67a94.PNG"></v:imagedata></v:shape>
+| 12.   | Using the gpconfig command, modify the log_min_messages parameter once more to change it to warning.
+
+[gpadmin@mdw gpseg-1]$ **gpconfig -c log_min_messages -v warning**
+
+<v:shape id="Picture_x0020_68" o:spid="_x0000_i1387" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1d911f3.PNG" style="width: 458pt; height: 83pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image151.png" o:title="SNAGHTML1d911f3.PNG"></v:imagedata></v:shape>
+| 13.   | Using gpstop, reread the postgresql.conf file.
+
+[gpadmin@mdw gpseg-1]$ **gpstop -u**
+
+<v:shape id="Picture_x0020_72" o:spid="_x0000_i1386" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1db838a.PNG" style="width: 458pt; height: 189pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image152.png" o:title="SNAGHTML1db838a.PNG"></v:imagedata></v:shape>
+| 14.   | Use gpconfig to verify the log_min_messages parameter has been updated on all servers.
+
+[gpadmin@mdw gpseg-1]$ **gpconfig -s log_min_messages**
+
+<v:shape id="Picture_x0020_75" o:spid="_x0000_i1385" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1ddf1e6.PNG" style="width: 458pt; height: 104pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image153.png" o:title="SNAGHTML1ddf1e6.PNG"></v:imagedata></v:shape>
+| 15.   | Using the gpconfig command, remove the changes that you made to the log_min_messagesparameter.
+
+[gpadmin@mdw gpseg-1]$ **gpconfig -r log_min_messages**
+
+<v:shape id="Picture_x0020_87" o:spid="_x0000_i1384" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1df6bc6.PNG" style="width: 458pt; height: 85pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image154.png" o:title="SNAGHTML1df6bc6.PNG"></v:imagedata></v:shape>
+| 16.   | Reload the postgresql.conf file.
+
+[gpadmin@mdw gpseg-1]$ **gpstop -u**
+
+<v:shape id="Picture_x0020_94" o:spid="_x0000_i1383" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1e08aea.PNG" style="width: 458pt; height: 189pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image155.png" o:title="SNAGHTML1e08aea.PNG"></v:imagedata></v:shape>
+| 17.   | Verify the changes have been reset.
+
+[gpadmin@mdw gpseg-1]$ **gpconfig -s log_min_messages**
+
+<v:shape id="Picture_x0020_1440" o:spid="_x0000_i1382" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1ddf1e6.PNG" style="width: 458pt; height: 104pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image156.png" o:title="SNAGHTML1ddf1e6.PNG"></v:imagedata></v:shape>
+
+Is this the expected value? Why or why not?
+
+_______________________________________________________________________________
+
+_______________________________________________________________________________
+
+_______________________________________________________________________________
+|  | **Summary**
+
+Setting server configuration parameters can be done at the system level by editing thepostgresql.conf configuration file on the Greenplum master. The preferred method for editing some parameters is with the gpconfig command. The command, gpconfig -l lists all the parameters you can change with gpconfig. You must either reload the master postgresql.conf file with thegpstop –u command or restart the Greenplum Database with the gpstop -r before changes are visible.
+
+Note that some parameters are global and some are not. Global parameters need only be set on the master and the value is passed on to the segments. The non-global parameters must be set in thepostgresql.conf on the master and on all segments as well and require a system restart.
+
+You can also set global parameters on a per-session basis using the SET command. Note that it is also possible to set parameters at the database level (using ALTER DATABASE SET) or at the role level (ALTER ROLE SET).
+
+To examine the current setting of configuration parameters, use the SHOW command. You can also use the gpconfig -s command to list the values on all servers in the cluster. SHOW ALL will show the values for all parameters. You will have to page through the commands or type q to stop.
+
+Optional steps:
+
+1.     Connect to the postgres database:  
+$** psql postgres**
+
+2.     Issue the **SHOW ALL** command:  
+postgres=# **SHOW ALL;**
+
+3.     Exit** psql**:**  
+**postgres=# **\q**
+|====
+
+
+
+
+
+
+
+|====
+| **Step** | **Action**
+| 1.      | If not already there, change to the directory represented by the variable,$MASTER_DATA_DIRECTORY**,** to perform this exercise. Using vi, edit the pg_hba.conf file.
+
+[gpadmin@mdw gpseg-1]$ **cd $MASTER_DATA_DIRECTORY**
+
+[gpadmin@mdw gpseg-1]$ **vi pg_hba.conf**
+| 2.      | In follow on labs, you will create a database called faa and you will add a database role for yourself. Add the following line at the bottom of pg_hba.conf, replacing <your_name> with your first name:
+
+**local   faa   <your_name>    trust**
+
+<v:shape id="Picture_x0020_52" o:spid="_x0000_i1381" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML13e4b38.PNG" style="width: 458pt; height: 262pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image157.png" o:title="SNAGHTML13e4b38.PNG"></v:imagedata></v:shape>
+
+Save your changes and exit vi.
+
+Before proceeding to the next step:
+
+1.     Verify that all characters entered are lowercase.
+
+2.     Do not use tabs to separate each field in the pg_hba.conf file. Instead, use spaces.
+| 3.      | Reload the configuration for the changes to take effect:
+
+[gpadmin@mdw gpseg-1]$** gpstop -u**
+
+<v:shape id="Picture_x0020_53" o:spid="_x0000_i1380" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML13f153b.PNG" style="width: 459pt; height: 197pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image158.png" o:title="SNAGHTML13f153b.PNG"></v:imagedata></v:shape>
+|  | **Summary**
+
+The pg_hba.conf file controls the hosts and users that can connect to the Greenplum Database, the databases they can access, and how users are authenticated.
+
+After a Greenplum Database system is first initialized, only the Greenplum superuser, the user who rangpinitsystem, is allowed to connect from the local host. If you want to allow other users or client machines to connect, or change the default means of authentication, you must edit the pg_hba.conffile of the master instance.
+
+It is often necessary to give access with the addition of new databases or when requesting remote access through a query editor such as pgAdmin III.
+
+**Note: **You must reload the configuration (or restart the Greenplum Database) for changes topg_hba.conf to take effect.
+|====
+
+
+
+End of Lab Exercise
+
+
+
+
+

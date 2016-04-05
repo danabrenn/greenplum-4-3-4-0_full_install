@@ -1,0 +1,299 @@
+= 11. Table Management
+
+
+
+|====
+|   
+
+**Purpose:**
+
+ | The purpose of this lab is to create various types of supported Greenplum Database tables. You will create tables of varying types, load data to these tables, and discover which table type offers better performance under specific conditions.
+| 
+| **Tasks:** | Students perform the following tasks:
+
+·       Create a temporary table
+
+·       Verify the size of two identical tables where one is compressed and the other is not
+
+·       Verify the performance on a column-oriented table
+| 
+| **References:** | Module 5 – Data Loading and Distribution
+
+·       Lesson: Implementing Table Storage Models, Compression, and Tablespaces
+|====
+
+|====
+|   
+
+**Step** | **Action**
+| 1.      | Create the dbstudent database which will be used to support your tables.
+
+[gpadmin@mdw ~]$ **createdb dbstudent**
+
+<v:shape id="Picture_x0020_34" o:spid="_x0000_i1283" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLe4623.PNG" style="width: 458pt; height: 64pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image255.png" o:title="SNAGHTMLe4623.PNG"></v:imagedata></v:shape>
+| 2.      | Connect to the dbstudent database:
+
+[gpadmin@mdw ~]$ **psql dbstudent**
+
+<v:shape id="Picture_x0020_35" o:spid="_x0000_i1282" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLf7f5c.PNG" style="width: 446pt; height: 91pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image256.png" o:title="SNAGHTMLf7f5c.PNG"></v:imagedata></v:shape>
+| 3.      | Create a new schema called studentdata.
+
+dbstudent=#** create schema studentdata;**
+
+<v:shape id="Picture_x0020_38" o:spid="_x0000_i1281" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML19f076.PNG" style="width: 446pt; height: 1in; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image257.png" o:title="SNAGHTML19f076.PNG"></v:imagedata></v:shape>
+| 4.      | Change the search_path parameter on the database dbstudent** **so that the new studentdata schema is the default schema.
+
+dbstudent=#** alter database dbstudent set search_path to studentdata,public,pg_catalog;**
+
+<v:shape id="Picture_x0020_40" o:spid="_x0000_i1280" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML21b615.PNG" style="width: 446pt; height: 83pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image258.png" o:title="SNAGHTML21b615.PNG"></v:imagedata></v:shape>
+
+Reconnect to the database to re-read the search_path settings.
+
+dbstudent=#**  \c dbstudent**
+| 5.      | Create a temporary table called dimairline_t using the following SQL syntax:
+
+dbstudent=#** CREATE TEMPORARY TABLE DimAirline_T(**
+
+**    AirlineID Smallint,**
+
+**    AirlineName Character varying(95))**
+
+**    WITH (OIDS=FALSE)**
+
+**DISTRIBUTED BY (AirlineID);**
+
+
+
+<v:shape id="Picture_x0020_41" o:spid="_x0000_i1279" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML22c523.PNG" style="width: 446pt; height: 110pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image259.png" o:title="SNAGHTML22c523.PNG"></v:imagedata></v:shape>
+| 6.      | List all the tables in the dbstudent database.
+
+dbstudent=#** \dt**
+
+<v:shape id="Picture_x0020_42" o:spid="_x0000_i1278" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML238e3b.PNG" style="width: 446pt; height: 119pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image260.png" o:title="SNAGHTML238e3b.PNG"></v:imagedata></v:shape>
+
+Note that the table is listed in a temporary schema. The schema name may vary from what is displayed in this step. Any other temporary tables created in this session will be saved to the same temporary schema.
+| 7.      | Reconnect to the dbstudent database.
+
+dbstudent=# **\c dbstudent**
+| 8.      | List all the tables in the dbstudent** **database.
+
+dbstudent=#** \dt**
+
+<v:shape id="Picture_x0020_115" o:spid="_x0000_i1277" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML28bf39.PNG" style="width: 446pt; height: 90pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image261.png" o:title="SNAGHTML28bf39.PNG"></v:imagedata></v:shape>
+
+The temporary schema that was created when you created the temporary table is automatically dropped when the session ends. Any tables in the schema are also dropped. Reconnecting to the database creates another temporary schema which will be used should you create temporary tables in the new session.
+|  | **Summary**
+
+Temporary tables exist in a special schema, so a schema name may not be given when creating a temporary table. When creating temporary tables, the table name must be unique to the session.
+
+Different sessions can use the same name as the schema name will differ from session to session.
+
+Temporary tables are automatically dropped at the end of the session or optionally, at the end of a transaction with the ON COMMIT clause. This will occur when dropping the session or reconnecting to it, something that occurs often with business intelligence applications and reporting tools.
+
+Temporary tables are a good way of handling complex and intensive SQL statements used for generating reports. They can be used to reduce performance impacts for queries that may have a tendency to generate computational skew.
+|====
+
+
+**  
+**
+
+
+
+
+|====
+| **Step** | **Action**
+| 1.      | If not already connected to the database, connect to the dbstudentdatabase.
+
+[gpadmin@mdw ~]$ **psql dbstudent**
+
+<v:shape id="Picture_x0020_1486" o:spid="_x0000_i1276" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLf7f5c.PNG" style="width: 446pt; height: 91pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image262.png" o:title="SNAGHTMLf7f5c.PNG"></v:imagedata></v:shape>
+| 2.      | In this task, you will create two tables: a compressed and a regular heap table. These two tables both have an equal number of fields and records.
+
+Create a regular heap table called dimairline as shown below:
+
+dbstudent=#** CREATE TABLE DimAirline(**
+
+**    AirlineID Smallint,**
+
+**    AirlineName Character varying(95))**
+
+**WITH (OIDS=FALSE)**
+
+**DISTRIBUTED BY (AirlineID);**
+
+
+
+<v:shape id="Picture_x0020_1496" o:spid="_x0000_i1275" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML58f171.PNG" style="width: 446pt; height: 113pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image263.png" o:title="SNAGHTML58f171.PNG"></v:imagedata></v:shape>
+| 3.      | Create a compressed table called  x_airline as shown below:
+
+dbstudent=#** create table x_airline (like dimairline)**
+
+**    with (appendonly=true,**
+
+**        oids=false,**
+
+**        compresstype=zlib,**
+
+**        compresslevel=5)**
+
+**distributed by (airlineid);**
+
+
+
+<v:shape id="Picture_x0020_185" o:spid="_x0000_i1274" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML594f1a.PNG" style="width: 446pt; height: 115pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image264.png" o:title="SNAGHTML594f1a.PNG"></v:imagedata></v:shape>
+| 4.      | Populate the heap table as shown.
+
+dbstudent=#** copy dimairline from '/rawdata/FAAData/DimAIRLINES.csv'**
+
+**with delimiter ',' CSV HEADER QUOTE '"';**
+
+
+
+<v:shape id="Picture_x0020_238" o:spid="_x0000_i1273" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML59f9f9.PNG" style="width: 446pt; height: 79pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image265.png" o:title="SNAGHTML59f9f9.PNG"></v:imagedata></v:shape>
+| 5.      | Populate the compressed table with records from dimairline table as shown.
+
+dbstudent=#** insert into x_airline select * from dimairline;**
+
+
+
+<v:shape id="Picture_x0020_244" o:spid="_x0000_i1272" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5a60c6.PNG" style="width: 446pt; height: 70pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image266.png" o:title="SNAGHTML5a60c6.PNG"></v:imagedata></v:shape>
+| 6.      | Verify the size of both tables by viewing the sotdsize column of thegp_toolkit.gp_size_of_table_disk table. This table stores information on all tables within the database. The size column, sotdsize, is displayed in bytes.
+
+dbstudent=#** select sotdsize from gp_toolkit.gp_size_of_table_disk**
+
+**where sotdtablename = 'dimairline';**
+
+dbstudent=#** select sotdsize from gp_toolkit.gp_size_of_table_disk**
+
+**where sotdtablename = 'x_airline';**
+
+
+
+<v:shape id="Picture_x0020_308" o:spid="_x0000_i1271" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5c738b.PNG" style="width: 446pt; height: 184pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image267.png" o:title="SNAGHTML5c738b.PNG"></v:imagedata></v:shape>
+
+
+
+Note that the listed size of the tables differ greatly. The compressed AO table, x_airline, is less than 25% of the size of the heap table,dimairline.
+| 7.      | Exit the database once you have completed the steps.
+
+dbstudent=#** \q**
+|  | **Summary**
+
+Both tables have the same number of fields and records. However, the compressed table is considerably smaller in terms of the amount of its disk size than the uncompressed table. Tables that use compression must be an append-only table. You can only add new rows to an append-only table. You cannot update or delete rows from an append-only table. This allows for more compact storage on disk. It saves 20 bytes per row.
+
+Choosing greater levels of compression result in more compact storage. Increasing compression requires more CPU cycles to access the data when required, either on reads or writes. For data that is not often accessed, it may be applicable to apply strong compression to the table, or partition. This ensures that older data that is not often accessed do not consume large amounts of storage and should balance well against how often you need to access them.
+|====
+
+
+
+
+
+
+
+|====
+| **Step** | **Action**
+| 1.      | Create two tables in the dbstudent** **database. The tables will be calledfactontimeperformance and c_factontimeperformance**.**The** **factontimeperformance** **table is a regular heap table andc_factontimeperformance** **is a** **column-wise storage oriented table. Run the script below to create the heap table.
+
+[gpadmin@mdw ~]$** psql -f \  
+/rawdata/FAAData/CreateDbstudent_Performance.sql dbstudent**
+
+
+
+<v:shape id="Picture_x0020_310" o:spid="_x0000_i1270" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML67fcb7.PNG" style="width: 446pt; height: 80pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image268.png" o:title="SNAGHTML67fcb7.PNG"></v:imagedata></v:shape>
+| 2.      | The heap table** **factontimeperformance** **has been created.
+
+
+
+Connect to the dbstudent database and create the compressed table,c_factontimeperformance,** **based** **factontimeperformanceas shown.
+
+** **
+
+[gpadmin@mdw ~]$** psql dbstudent**
+
+dbstudent=#** create table c_factontimeperformance   
+    (like factontimeperformance)**
+
+**with (appendonly=true, orientation=column)**
+
+**distributed randomly;**
+
+
+
+<v:shape id="Picture_x0020_311" o:spid="_x0000_i1269" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML686421.PNG" style="width: 446pt; height: 138pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image269.png" o:title="SNAGHTML686421.PNG"></v:imagedata></v:shape>
+| 3.      | Use the \i command to execute scripts that will populate the tables you have just created.  It may take a few minutes to load all of the data.
+
+dbstudent=# **\i /rawdata/FAAData/load_facton2008.sql**
+
+dbstudent=# \i**/rawdata/FAAData/load_c_facton2008.sql**
+
+
+
+<v:shape id="Picture_x0020_312" o:spid="_x0000_i1268" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML72c2e3.PNG" style="width: 446pt; height: 304pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image270.png" o:title="SNAGHTML72c2e3.PNG"></v:imagedata></v:shape>
+
+
+
+After running these scripts, each table should contain 7 million records. The data loaded into both tables represent the entire year of 2008 for FAA flight data.
+| 4.      | Verify you have the same number of records on both tables.
+
+dbstudent=# **select** **count(*) from factontimeperformance;**
+
+dbstudent=#** select count(*) from c_factontimeperformance;**
+
+<v:shape id="Picture_x0020_313" o:spid="_x0000_i1267" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML758863.PNG" style="width: 446pt; height: 167pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image271.png" o:title="SNAGHTML758863.PNG"></v:imagedata></v:shape>
+| 5.      | Calculate how many times Southwest Airlines flew to Chicago in the year 2008 running the query below. Run the query on both tables:factontimeperformance and c_factontimeperformance. You should see the same results for both tables.
+
+dbstudent=#** select count(*)  from factontimeperformance where**
+
+**    year = 2008  and**
+
+**    airlineid = 19393 and**
+
+**    destcityname = 'Chicago, IL';**
+
+dbstudent=#** select count(*)  from c_factontimeperformance where**
+
+**    year = 2008  and**
+
+**    airlineid = 19393 and**
+
+**    destcityname = 'Chicago, IL';**
+
+
+
+<v:shape id="Picture_x0020_314" o:spid="_x0000_i1266" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML767df7.PNG" style="width: 446pt; height: 225pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image272.png" o:title="SNAGHTML767df7.PNG"></v:imagedata></v:shape>
+| 6.      | To verify which query is faster, analyze the queries using explain analyze command. This command will be taught in more detail in later labs. For now, pay close attention to the **Total runtime** line.
+
+Run the command for the factontimeperformance table, which is a row-oriented heap table.
+
+dbstudent=#** EXPLAIN ANALYZE select count(*)  
+from factontimeperformance  
+where year = 2008 and  
+    airlineid = 19393 and  
+    destcityname = 'Chicago, IL';**
+
+<v:shape id="Picture_x0020_315" o:spid="_x0000_i1265" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML7b88ff.PNG" style="width: 446pt; height: 388pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image273.png" o:title="SNAGHTML7b88ff.PNG"></v:imagedata></v:shape>
+
+In this example, the query took 9751.207ms to complete. Your time may vary from what is displayed here. Compare these results against the append-only column-oriented table.
+| 7.      | Execute the same command for the c_factontimeperformancetable, which is an append-only column oriented table.
+
+dbstudent=#** EXPLAIN ANALYZE select count(*)  
+from c_factontimeperformance  
+where year = 2008  and  
+    airlineid = 19393 and  
+    destcityname = 'Chicago, IL';**
+
+<v:shape id="Picture_x0020_316" o:spid="_x0000_i1264" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML7d5ee3.PNG" style="width: 446pt; height: 388pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image274.png" o:title="SNAGHTML7d5ee3.PNG"></v:imagedata></v:shape>
+
+In this example, the query took 2146.133 ms to complete. Your time may vary from what is displayed here. You should note that the completion time on the column-oriented table is significantly less than the heap table. As there are few columns thar are being accessed, column-oriented tables offer an advantage in this query.
+| 8.      | Exit the database.
+|  | **Summary**
+
+For most general purpose or mixed workloads, row-oriented storage offers the best combination of flexibility and performance. However, there are certain specific use cases where a column-oriented storage model provides more efficient I/O and storage.
+
+Column-oriented tables offer strong performance gains over row-oriented tables when the table is being used mostly for reads and there are few columns being selected against or aggregated over. For data that is not updated often or is limited to a single column, column-oriented tables may offer a distinct advantage for gathering data from the table over row-oriented tables. A negative impact can be seen if you need to select a majority of the columns on a column-oriented table. Understanding the data and how it will be used will help you choose the appropriate storage model for the table.
+|====
+
+
+
+End of Lab Exercise
+  

@@ -1,0 +1,168 @@
+= 10. Controlling Access
+
+
+
+|====
+|   
+
+**Purpose:**
+
+ | In this lab, you design and implement the basic security architecture for your data mart. You will create two new users and use groups to control the level of access that users, who will be members of the group, receive. This method makes it easier to administer privileges by working with groups instead of working with individual user accounts.
+| 
+| **Tasks:** | Students perform the following task: Implement basic security at the group level.
+| 
+| **References:** | Module 4 – Defining and Securing the User Database
+
+·       Lesson: Roles, Privileges, and Resources
+|====
+
+|====
+| **Step** | **Action**
+| 1.      | Open a terminal session to the master server using the gpadmin user account, if one is not already available. Connect to the faa database as gpadmin**.**
+
+ [gpadmin@mdw ~]$ **psql faa**
+| 2.      | Create one of the user roles that will be used to verify the security implementation:
+
+faa=# **CREATE ROLE batchuser LOGIN;**
+
+<v:shape id="Picture_x0020_253" o:spid="_x0000_i1305" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbd6fd7e.PNG" style="width: 458pt; height: 86pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image233.png" o:title="SNAGHTMLbd6fd7e.PNG"></v:imagedata></v:shape>
+| 3.      | Change over to the new role you created, **batchuser**:
+
+ faa=# **SET ROLE batchuser;**
+
+<v:shape id="Picture_x0020_254" o:spid="_x0000_i1304" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbd7584a.PNG" style="width: 458pt; height: 1in; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image234.png" o:title="SNAGHTMLbd7584a.PNG"></v:imagedata></v:shape>
+| 4.      | Query the test_table table:
+
+faa=> **SELECT * FROM faadata.test_table;**
+
+<v:shape id="Picture_x0020_255" o:spid="_x0000_i1303" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbd7c233.PNG" style="width: 458pt; height: 88pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image235.png" o:title="SNAGHTMLbd7c233.PNG"></v:imagedata></v:shape>
+
+Did it succeed? If not, why not? _______________________________________
+| 5.      | Change back to gpadmin:
+
+faa=> **SET ROLE gpadmin;**
+
+<v:shape id="Picture_x0020_288" o:spid="_x0000_i1302" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbd8270d.PNG" style="width: 458pt; height: 70pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image236.png" o:title="SNAGHTMLbd8270d.PNG"></v:imagedata></v:shape>
+| 6.      | Grant permissions to the faadata schema:
+
+faa=#  **GRANT USAGE ON SCHEMA faadata TO batchuser;**
+
+<v:shape id="Picture_x0020_289" o:spid="_x0000_i1301" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbd87e51.PNG" style="width: 458pt; height: 69pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image237.png" o:title="SNAGHTMLbd87e51.PNG"></v:imagedata></v:shape>
+
+While you have been granted USAGE access on the schema, you still do not have access to the existing tables that do not specifically grant access to all.
+| 7.      | Grant access of our test_table to the group:
+
+faa=#  **GRANT select, insert, update, delete ON faadata.test_table TO batchuser;**
+
+<v:shape id="Picture_x0020_290" o:spid="_x0000_i1300" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbd8dd03.PNG" style="width: 458pt; height: 79pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image238.png" o:title="SNAGHTMLbd8dd03.PNG"></v:imagedata></v:shape>
+| 8.      | Try accessing the faadata**.**test_table again as batchuser. Change over to the new role:
+
+faa=# **SET ROLE batchuser;**
+
+<v:shape id="Picture_x0020_291" o:spid="_x0000_i1299" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbd93b49.PNG" style="width: 458pt; height: 69pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image239.png" o:title="SNAGHTMLbd93b49.PNG"></v:imagedata></v:shape>
+| 9.      | Query the test_table table:
+
+faa=> **SELECT * FROM faadata.test_table;**
+
+<v:shape id="Picture_x0020_292" o:spid="_x0000_i1298" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbd994cd.PNG" style="width: 458pt; height: 101pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image240.png" o:title="SNAGHTMLbd994cd.PNG"></v:imagedata></v:shape>
+
+You should now have SELECT, INSERT, DELETE, and UPDATE access to the test_table table in thefaadata schema.
+| 10.   | Create a group role and assign privileges indirectly. First, change back to the gpadmin role:
+
+faa=> **SET ROLE gpadmin;**
+
+<v:shape id="Picture_x0020_293" o:spid="_x0000_i1297" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbd9f1cb.PNG" style="width: 458pt; height: 71pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image241.png" o:title="SNAGHTMLbd9f1cb.PNG"></v:imagedata></v:shape>
+| 11.   | Revoke privilege to the faadata**.**test_table table as gpadmin:
+
+faa=# **REVOKE SELECT, INSERT, UPDATE, DELETE ON faadata.test_table from batchuser;**
+
+<v:shape id="Picture_x0020_294" o:spid="_x0000_i1296" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbda4aa4.PNG" style="width: 458pt; height: 80pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image242.png" o:title="SNAGHTMLbda4aa4.PNG"></v:imagedata></v:shape>
+| 12.   | Revoke privileges to the **faadata** schema:
+
+faa=# **REVOKE USAGE ON SCHEMA faadata FROM batchuser;**
+
+<v:shape id="Picture_x0020_295" o:spid="_x0000_i1295" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbdaadf8.PNG" style="width: 458pt; height: 70pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image243.png" o:title="SNAGHTMLbdaadf8.PNG"></v:imagedata></v:shape>
+| 13.   | Create the batch group role that you will assign privileges to:
+
+faa=# **CREATE ROLE batch;**
+
+<v:shape id="Picture_x0020_296" o:spid="_x0000_i1294" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbdb1301.PNG" style="width: 458pt; height: 88pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image244.png" o:title="SNAGHTMLbdb1301.PNG"></v:imagedata></v:shape>
+| 14.   | Grant permissions to the faadata schema to the batch role you created:
+
+faa=# **GRANT USAGE ON SCHEMA faadata TO batch;**
+
+<v:shape id="Picture_x0020_297" o:spid="_x0000_i1293" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbdb781a.PNG" style="width: 458pt; height: 71pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image245.png" o:title="SNAGHTMLbdb781a.PNG"></v:imagedata></v:shape>
+| 15.   | Grant access on the test_table to the group, batch:
+
+faa=# **GRANT SELECT, INSERT, UPDATE, DELETE ON faadata.test_table TO batch;**
+
+<v:shape id="Picture_x0020_298" o:spid="_x0000_i1292" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbdbd16f.PNG" style="width: 458pt; height: 79pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image246.png" o:title="SNAGHTMLbdbd16f.PNG"></v:imagedata></v:shape>
+
+Members of the group, batch, will now have SELECT, INSERT, UPDATE, and DELETE privileges on the faadata.test_table table.
+| 16.   | Assign a user role to the newly created group role:
+
+faa=# **GRANT batch TO batchuser;**
+
+<v:shape id="Picture_x0020_300" o:spid="_x0000_i1291" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbded594.PNG" style="width: 458pt; height: 71pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image247.png" o:title="SNAGHTMLbded594.PNG"></v:imagedata></v:shape>
+| 17.   | Create a second user role, batchuser2:
+
+faa=# **CREATE ROLE batchuser2 login;**
+
+<v:shape id="Picture_x0020_301" o:spid="_x0000_i1290" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbdf34f2.PNG" style="width: 458pt; height: 90pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image248.png" o:title="SNAGHTMLbdf34f2.PNG"></v:imagedata></v:shape>
+| 18.   | Assign the batchuser2 user role to the batch group role:
+
+faa=# **GRANT batch TO batchuser2;**
+
+<v:shape id="Picture_x0020_302" o:spid="_x0000_i1289" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbdf8b3c.PNG" style="width: 458pt; height: 68pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image249.png" o:title="SNAGHTMLbdf8b3c.PNG"></v:imagedata></v:shape>
+| 19.   | Verify that both user roles have access the faadata.test_table table. First, change to the batchuser role:
+
+faa=# **SET ROLE batchuser;**
+
+<v:shape id="Picture_x0020_303" o:spid="_x0000_i1288" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbe000f8.PNG" style="width: 458pt; height: 71pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image250.png" o:title="SNAGHTMLbe000f8.PNG"></v:imagedata></v:shape>
+| 20.   | Query the test_table table:
+
+faa=> **SELECT * from faadata.test_table;**
+
+<v:shape id="Picture_x0020_304" o:spid="_x0000_i1287" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbe05a9b.PNG" style="width: 458pt; height: 103pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image251.png" o:title="SNAGHTMLbe05a9b.PNG"></v:imagedata></v:shape>
+
+You should have access to the table because of the role’s relationship to the batch role.
+| 21.   | Change to the batchuser2 role and verify this user has access to the same table:
+
+faa=> **SET ROLE batchuser2;**
+
+faa=> **SELECT * from faadata.test_table;**
+
+<v:shape id="Picture_x0020_305" o:spid="_x0000_i1286" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbe0e34a.PNG" style="width: 458pt; height: 117pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image252.png" o:title="SNAGHTMLbe0e34a.PNG"></v:imagedata></v:shape>
+
+This role has also been granted access to the table due to its association with the batch role.
+| 22.   | Tie all users in the batch group into the adhoc resource queue you created earlier:
+
+Change to the gpadmin role:
+
+faa=> **SET ROLE gpadmin;**
+
+<v:shape id="Picture_x0020_306" o:spid="_x0000_i1285" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbe19367.PNG" style="width: 458pt; height: 70pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image253.png" o:title="SNAGHTMLbe19367.PNG"></v:imagedata></v:shape>
+| 23.   | Add the batch role to the resource queue, adhoc:
+
+faa=# **ALTER ROLE batch RESOURCE QUEUE adhoc;**
+
+<v:shape id="Picture_x0020_307" o:spid="_x0000_i1284" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbe22874.PNG" style="width: 458pt; height: 71pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image254.png" o:title="SNAGHTMLbe22874.PNG"></v:imagedata></v:shape>
+
+Exit psql.
+
+faa=# **\q**
+|  | **Summary**
+
+You should work with the user community and the administrators to come up with a security architecture that will fit your access requirements.
+
+Table and schema level access is done through the use of roles.
+
+Row level access is best accomplished with a combination of roles and views against the data that has all of the security logic built into the view. While this may inhibit performance for some queries, it will also ensure that your data is secure and only “need to know” access is given to the end users.
+
+Row level security may also be performed by reporting engines. This may suffice if your data security level is low.
+|====
+
+
+
+End of Lab Exercise
+  

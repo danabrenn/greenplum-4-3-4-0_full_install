@@ -1,0 +1,52 @@
+= 16. Data Modeling
+
+
+
+|====
+|   
+
+**Purpose:** | In this lab, you create the database objects that will be used for follow-on labs for demonstrating data modeling and design decisions.
+| 
+| **Tasks:** | Students perform the following task: Create thedatamart database and database objects.
+| 
+| **References:**
+
+ | Module 7: Data Modeling and Design
+
+·       Lesson: Data Modeling
+|====
+
+**datamart Database and Objects**
+
+|====
+| **Step** | **Action**
+| 1.      | Create the datamart database using either of the methods discussed.
+
+From the Linux command prompt:
+
+[gpadmin@mdw ~]$ **createdb datamart**
+
+<v:shape id="Picture_x0020_2" o:spid="_x0000_i1111" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f4dcfef.PNG" style="width: 458pt; height: 58pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image427.png" o:title="SNAGHTML1f4dcfef.PNG"></v:imagedata></v:shape>
+| 2.      | Access the datamart database as gpadmin:
+
+[gpadmin@mdw ~]$ **psql datamart**
+
+<v:shape id="Picture_x0020_6" o:spid="_x0000_i1110" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f4e39aa.PNG" style="width: 458pt; height: 89pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image428.png" o:title="SNAGHTML1f4e39aa.PNG"></v:imagedata></v:shape>
+| 3.      | Create the facts and dimensions schema for the database:
+
+datamart=# **CREATE SCHEMA dimensions;  
+**datamart=# **CREATE SCHEMA facts;**
+
+<v:shape id="Picture_x0020_11" o:spid="_x0000_i1109" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f4eb011.PNG" style="width: 458pt; height: 89pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image429.png" o:title="SNAGHTML1f4eb011.PNG"></v:imagedata></v:shape>
+| 4.      | Set the default search path for the datamart database to include the facts and dimensionsschemas. You may wish to include public and pg_catalog as well.
+
+datamart=# **ALTER DATABASE datamart SET  
+search_path=dimensions,facts,public,pg_catalog;**
+
+<v:shape id="Picture_x0020_14" o:spid="_x0000_i1108" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f505b3d.PNG" style="width: 458pt; height: 80pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image430.png" o:title="SNAGHTML1f505b3d.PNG"></v:imagedata></v:shape>
+|====
+
+
+
+End of Lab Exercise
+  

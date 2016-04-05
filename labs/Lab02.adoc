@@ -1,0 +1,512 @@
+= 2. Systems Preparation and Verification
+
+ 
+
+|====
+|   
+
+**Purpose:**
+
+  | In this lab, you verify and prepare the operating system for installation and configuration of the Greenplum Database.
+|  
+| **Tasks:** | Students perform the following tasks:
+
+·       Install the Greenplum Database binaries.
+
+·       Install and configure Greenplum in all hosts that comprise the Greenplum environment.
+
+·       Create the data storage areas for the Greenplum database.
+
+·       Synchronize system clocks.
+
+·       Perform system verification tasks.
+|  
+| **References:** | Module 2 – Database Installation and Initialization
+
+·       Lesson: Systems Preparation and Verification
+|====
+
+|====
+| **Step** | **Action**
+| 1.       | If not already connected, open a terminal session to mdw and log in with the following credentials:
+
+->       Login: **root**
+
+->       Password: **Piv0tal**
+| 2.       | Using the vi editor, edit the /etc/sysctl.conf file and confirm that the parameters shown in this step correspond to the values shown. If the parameters do not exist, or the values are less than the values shown, add or modify the existing line as shown to the /etc/sysctl.conf file.
+
+You are only verifying the values of these parameters as they exist at the bottom of the file.
+
+Note: These parameter changes are required in your production environment to ensure better performance for the Greenplum Database.
+
+ [root@mdw ~]# **vi /etc/sysctl.conf**
+
+kernel.shmmax = 500000000
+
+kernel.shmmni = 4096
+
+kernel.shmall = 4000000000
+
+kernel.sem = 250 512000 100 2048
+
+kernel.sysrq = 1
+
+kernel.core_uses_pid = 1
+
+kernel.msgmnb = 65536
+
+kernel.msgmax = 65536
+
+kernel.msgmni = 2048
+
+net.ipv4.tcp_syncookies = 1
+
+net.ipv4.ip_forward = 0
+
+net.ipv4.conf.default.accept_source_route = 0
+
+net.ipv4.tcp_tw_recycle = 1
+
+net.ipv4.tcp_max_syn_backlog = 4096
+
+net.ipv4.conf.all.arp_filter = 1
+
+net.ipv4.ip_local_port_range = 1025 65535
+
+net.core.netdev_max_backlog = 10000
+
+**net.core.rmem_max = 2097152**
+
+**net.core.wmem_max = 2097152**
+
+vm.overcommit_memory = 2
+
+The settings above for kernel.shmmax and kernel.shmall are minimum and maximum values.
+
+**Note:** Commands that you edit or change are marked in bold. Each UNIX command typed in a terminal session will be preceded by the prompt. Do not type that as part of the command.
+
+If you are not familiar with the vi editor, refer to **Appendix A** in your student guide.
+| 3.       | Using the sysctl command, incorporate any changes that you have made to /etc/sysctl.conftake effect immediately. This command would normally accept a file argument, but the/etc/sysctl.conf file is the default file argument:
+
+[root@mdw ~]# **sysctl –p**
+
+<v:shape id="Picture_x0020_1391" o:spid="_x0000_i1532" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1568cf9.PNG" style="width: 446pt; height: 262pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image006.png" o:title="SNAGHTML1568cf9.PNG"></v:imagedata></v:shape>
+
+This step is necessary if you have made changes to the /etc/sysctl.conf file. Confirm the settings that you added in step 2 are present.
+| 4.       | Using the Linux cat command review /etc/security/limits.conf and verify the settings are as shown.
+
+These settings have already been made to the file. If they have not been made to the file use vi and add them.
+
+**soft nofile 65536**
+
+**hard nofile 65536** 
+
+**soft nproc 131072**
+
+**hard nproc 131072**
+
+| 5.       | Using the vi editor, edit the /etc/hosts file and add the host names and IP addresses of all machines participating in your Greenplum environment:
+
+**172.16.1.11     mdw     # master host**
+
+**172.16.1.14     smdw    # standby host**
+
+**172.16.1.12     sdw1    # segment one**
+
+**172.16.1.13     sdw2    # segment two**
+
+<v:shape id="Picture_x0020_1397" o:spid="_x0000_i1531" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1598e8f.PNG" style="width: 446pt; height: 139pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image007.png" o:title="SNAGHTML1598e8f.PNG"></v:imagedata></v:shape>
+
+Save the modified /etc/hosts file.
+| 6.       | Using the scp command, copy the file /etc/hosts to all machines participating in your Greenplum environment. Start with the standby host smdw**.**
+
+[root@mdw ~]# **scp /etc/hosts smdw:/etc/hosts**
+
+<v:shape id="Picture_x0020_1399" o:spid="_x0000_i1530" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15c8fa8.PNG" style="width: 458pt; height: 142pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image008.png" o:title="SNAGHTML15c8fa8.PNG"></v:imagedata></v:shape>
+
+**Note: **Answer **yes** to the question** Are you sure you want to continue connecting (yes/no)** and type the root password to complete the connection.
+
+**Note:** The root password is the same for all servers participating on the Greenplum environment.
+| 7.       | Copy the /etc/hosts file to the first segment server, sdw1, using the scp command.
+
+[root@mdw ~]# **scp /etc/hosts sdw1:/etc/hosts**
+
+<v:shape id="Picture_x0020_1400" o:spid="_x0000_i1529" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15d31c0.PNG" style="width: 458pt; height: 132pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image009.png" o:title="SNAGHTML15d31c0.PNG"></v:imagedata></v:shape>
+
+**Note:  **Answer **yes** to the question** Are you sure you want to continue connecting (yes/no)** and type the root password to complete the connection.
+| 8.       | Copy the /etc/hosts file to the second segment server, sdw2, using the **scp** command.
+
+[root@mdw ~]# **scp /etc/hosts sdw2:/etc/hosts**
+
+<v:shape id="Picture_x0020_1406" o:spid="_x0000_i1528" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15dc844.PNG" style="width: 458pt; height: 134pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image010.png" o:title="SNAGHTML15dc844.PNG"></v:imagedata></v:shape>
+
+**Note: **Answer **yes** to the question** Are you sure you want to continue connecting (yes/no)** and type the root password to complete the connection.
+| 9.       | Typically, you would download or copy the Greenplum Database installer file to the system that will be the Greenplum Master host.
+
+In this lab environment, the installer was preloaded in the /rawdata/Binaries directory.
+
+Change to the /rawdata/Binaries directory and list the contents of the directory.
+
+[root@mdw ~]# **cd /rawdata/Binaries  
+**[root@mdw ~]# **ls**
+
+**<v:shape id="Picture_x0020_13" o:spid="_x0000_i1527" type="#_x0000_t75" style="width: 463pt; height: 347pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image011.png" o:title=""></v:imagedata></v:shape>**
+| 10.    | The greenplum-db-4.3.4.0-build-1-RHEL5-x86_64.zip file is the Greenplum binary that you will install.
+
+Unzip the greenplum-db-4.3.4.0-build-1-RHEL5-x86_64.zip file.
+
+[root@mdw Binaries]# **unzip \greenplum-db-4.3.4.0-build-1-RHEL5-x86_64.zip**
+
+<v:shape id="Picture_x0020_1408" o:spid="_x0000_i1526" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1619498.PNG" style="width: 458pt; height: 99pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image012.png" o:title="SNAGHTML1619498.PNG"></v:imagedata></v:shape>
+
+**Note:**  A non-quoted backslash ‘\’ is the Bash escape character. It preserves the literal value of the next character that follows, with the exception of newline. If a \newline pair appears, and the backslash itself is not quoted, the \newline is treated as a line continuation (that is, it is removed from the input stream and effectively ignored).
+
+ 
+| 11.    | Launch the installer using bash. The following is an example of the command:
+
+[root@mdw Binaries]# **/bin/bash \  
+greenplum-db-4.3.4.0-build-1-RHEL5-x86_64.bin**
+
+<v:shape id="Picture_x0020_1410" o:spid="_x0000_i1525" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML16395a1.PNG" style="width: 458pt; height: 262pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image013.png" o:title="SNAGHTML16395a1.PNG"></v:imagedata></v:shape>
+| 12.    | Press the **space bar** to page through and read the license agreement. You may also press **q** at any time to stop reading the license agreement. At the end, you will be prompted to accept the license agreement.
+
+<v:shape id="Picture_x0020_1411" o:spid="_x0000_i1524" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1656f7b.PNG" style="width: 458pt; height: 262pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image014.png" o:title="SNAGHTML1656f7b.PNG"></v:imagedata></v:shape>
+
+Type **yes** to accept the Greenplum Database License Agreement and press **ENTER**.
+| 13.    | Accept the default installation path and press **ENTER**.
+
+<v:shape id="Picture_x0020_1412" o:spid="_x0000_i1523" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1662301.PNG" style="width: 458pt; height: 113pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image015.png" o:title="SNAGHTML1662301.PNG"></v:imagedata></v:shape>
+| 14.    | Type **yes** and press **ENTER** to accept the default install path.
+
+<v:shape id="Picture_x0020_1413" o:spid="_x0000_i1522" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML166b042.PNG" style="width: 458pt; height: 113pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image016.png" o:title="SNAGHTML166b042.PNG"></v:imagedata></v:shape>
+| 15.    | Type **yes** and press **ENTER **to create the Greenplum Database directory.
+
+<v:shape id="Picture_x0020_1414" o:spid="_x0000_i1521" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML16777f4.PNG" style="width: 458pt; height: 119pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image017.png" o:title="SNAGHTML16777f4.PNG"></v:imagedata></v:shape>
+| 16.    | This optional step applies if a previous installation of Greenplum Database could be found on the system. As this does not currently apply, press **ENTER** to continue.
+
+<v:shape id="Picture_x0020_1415" o:spid="_x0000_i1520" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML168db29.PNG" style="width: 458pt; height: 188pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image018.png" o:title="SNAGHTML168db29.PNG"></v:imagedata></v:shape>
+| 17.    | The installer has installed the Greenplum Database software and created a symbolic link namedgreenplum-db at the same level as your version-specific Greenplum Database installation directory. The symbolic link is used to facilitate patch maintenance and upgrades between versions. The installed location is referred to as $GPHOME.
+
+<v:shape id="Picture_x0020_1417" o:spid="_x0000_i1519" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML16964d1.PNG" style="width: 458pt; height: 179pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image019.png" o:title="SNAGHTML16964d1.PNG"></v:imagedata></v:shape>
+|====
+
+|====
+| **Step** | **Action**
+|   | **Task Description**
+
+You have just installed Greenplum Database on the master server. The following tasks will copy the Greenplum database installation from the **master **host and install the binaries to the hosts you specify. These hosts include the segment servers and the standby host.
+
+In this task, you will execute the gpseginstall command which will:
+
+1.     Create the Greenplum system user, gpadmin, on all hosts in the cluster and set the password tochangeme**.**
+
+2.     Change the ownership of the Greenplum installation directory
+
+3.     Exchange ssh keys among the master, standby, and the segments
+
+4.     Create the directories for storage data on hosts in the cluster
+| 1.       | You should login as root to perform the following tasks. You can confirm whether or not you are logged as rootwith the command whoami as shown below.
+
+Source the path from the master host Greenplum database installation as shown.
+
+[root@mdw Binaries]#** source \  
+/usr/local/greenplum-db/greenplum_path.sh**
+
+<v:shape id="Picture_x0020_1418" o:spid="_x0000_i1518" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML16ef2ce.PNG" style="width: 458pt; height: 86pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image020.png" o:title="SNAGHTML16ef2ce.PNG"></v:imagedata></v:shape>
+
+If you open a separate terminal window, you will need to source the greenplum_path.sh file in that window to easily access the Greenplum commands.
+| 2.       | Use the vi editor to create a file called hostfile_exkeys**. **This file should contain the hostnames of each host in the Greenplum environment.
+
+Add the following host names to hostfile_exkeys:  
+mdw  
+smdw  
+sdw1  
+sdw2
+
+**Note: **if you are not familiar with the vi editor, refer to the **Linux Basic Commands Appendix A**.
+
+<v:shape id="Picture_x0020_1419" o:spid="_x0000_i1517" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML170b8ea.PNG" style="width: 458pt; height: 89pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image021.png" o:title="SNAGHTML170b8ea.PNG"></v:imagedata></v:shape>
+| 3.       | Execute the gpseginstall utility and reference the file you just created, hostfile_exkeys**. **The -u option will create the Greenplum administrative user in all servers. You may or may not be asked for the password for each server.
+
+[root@mdw Binaries]# **gpseginstall -f hostfile_exkeys \  
+-u gpadmin -p changeme**
+
+<v:shape id="Picture_x0020_1420" o:spid="_x0000_i1516" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML171daac.PNG" style="width: 458pt; height: 151pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image022.png" o:title="SNAGHTML171daac.PNG"></v:imagedata></v:shape>
+| 4.       | The utility may prompt you to confirm the password for all of the servers on the Greenplum cluster. If prompted you must enter the password for each server in the cluster, except the master. Press **Enter **after entering the password. If you do not see the prompt for the next password required, enter the password again and press **Enter**.
+
+<v:shape id="Picture_x0020_1423" o:spid="_x0000_i1515" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML191d5bd.PNG" style="width: 458pt; height: 262pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image023.png" o:title="SNAGHTML191d5bd.PNG"></v:imagedata></v:shape>
+
+When gpseginstall finishes with no errors, the bottom portion of your screen should be similar to the screen below.
+
+<v:shape id="Picture_x0020_1421" o:spid="_x0000_i1514" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML173ee7a.PNG" style="width: 458pt; height: 262pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image024.png" o:title="SNAGHTML173ee7a.PNG"></v:imagedata></v:shape>
+| 5.       | Verify that all hosts in the cluster are accessible and have their own copy of the Greenplum software installed. Use the gpssh command to accomplish this task.
+
+[root@mdw Binaries]# **gpssh -f hostfile_exkeys -e ls –F $GPHOME**
+
+<v:shape id="Picture_x0020_74" o:spid="_x0000_i1513" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5601d99.PNG" style="width: 458pt; height: 258pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image025.png" o:title="SNAGHTML5601d99.PNG"></v:imagedata></v:shape>
+|====
+
+|====
+| **Step** | **Action**
+|   | **Task Description**
+
+Every Greenplum Database master and segment instance has a designated storage area on disk that is called the data directory location. This is the file system location where the directories that store segment instance data will be created. The master host needs a data storage location for the master data directory. Each segment host needs a data directory storage location for its primary segments, and another for its mirror segments.
+| 1.       | On your master server host, change to /data directory and create the directory that will be your master data storage area as shown.
+
+ 
+
+[root@mdw Binaries]#** cd /data**
+
+[root@mdw data]# **mkdir master**
+
+ 
+
+<v:shape id="Picture_x0020_1424" o:spid="_x0000_i1512" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML19d5ad4.PNG" style="width: 458pt; height: 74pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image026.png" o:title="SNAGHTML19d5ad4.PNG"></v:imagedata></v:shape>
+| 2.       | Change the ownership and the group of the new directory.
+
+[root@mdw data]# **chown gpadmin:gpadmin /data/master**
+
+<v:shape id="Picture_x0020_1425" o:spid="_x0000_i1511" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML19e1c9c.PNG" style="width: 458pt; height: 64pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image027.png" o:title="SNAGHTML19e1c9c.PNG"></v:imagedata></v:shape>
+| 3.       | Using gpssh, create the master data directory location on your standby master as well.
+
+[root@mdw data]# **gpssh -h smdw -e 'mkdir /data/master'**
+
+<v:shape id="Picture_x0020_1426" o:spid="_x0000_i1510" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML19f109b.PNG" style="width: 458pt; height: 1in; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image028.png" o:title="SNAGHTML19f109b.PNG"></v:imagedata></v:shape>
+| 4.       | Change the ownership of the data directory to gpadmin**.**
+
+[root@mdw data]# **gpssh -h smdw -e 'chown gpadmin:gpadmin \  
+/data/master'**
+
+<v:shape id="Picture_x0020_1428" o:spid="_x0000_i1509" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML19fac9b.PNG" style="width: 458pt; height: 69pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image029.png" o:title="SNAGHTML19fac9b.PNG"></v:imagedata></v:shape>
+| 5.       | Change to the /rawdata/Binaries directory.
+
+[root@mdw data]# **cd /rawdata/Binaries**
+
+<v:shape id="Picture_x0020_1429" o:spid="_x0000_i1508" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a6eee8.PNG" style="width: 458pt; height: 63pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image030.png" o:title="SNAGHTML1a6eee8.PNG"></v:imagedata></v:shape>
+| 6.       | Use the vi editor to create a file called hostfile_gpssh_segonly**. **This file should contain the hostnames of each segment host in the Greenplum environment.
+
+Add the following segment host names to hostfile_gpssh_segonly:  
+sdw1  
+sdw2
+
+<v:shape id="Picture_x0020_1430" o:spid="_x0000_i1507" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a7ada5.PNG" style="width: 458pt; height: 70pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image031.png" o:title="SNAGHTML1a7ada5.PNG"></v:imagedata></v:shape>
+| 7.       | Using gpssh, create the primary and mirror data directory locations on all segment hosts at once using thehostfile_gpssh_segonly file you just created.
+
+ 
+
+[root@mdw Binaries]# **gpssh -f hostfile_gpssh_segonly \  
+-e 'mkdir /data/primary; chown gpadmin:gpadmin /data/primary'**
+
+<v:shape id="Picture_x0020_1432" o:spid="_x0000_i1506" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a933e4.PNG" style="width: 458pt; height: 91pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image032.png" o:title="SNAGHTML1a933e4.PNG"></v:imagedata></v:shape>
+| 8.       | Using gpssh, change the permissions on the directory /loaddata in the sdw1 server. This directory will be used in future labs.
+
+[root@mdw Binaries]# **gpssh -h sdw1 -e 'chown -R gpadmin:gpadmin /loaddata'**
+
+<v:shape id="Picture_x0020_1433" o:spid="_x0000_i1505" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1b4f723.PNG" style="width: 458pt; height: 102pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image033.png" o:title="SNAGHTML1b4f723.PNG"></v:imagedata></v:shape>
+|====
+
+ 
+**  
+**
+
+ 
+
+|====
+| **Step** | **Action**
+| 1.       | Greenplum recommends using NTP (Network Time Protocol) to synchronize the system clocks on all hosts that comprise your Greenplum Database system.
+
+NTP on the segment hosts should be configured to use the master host as the primary time source and the standby master as the secondary time source. On the master and standby master hosts, configure NTP to point to your preferred time server.
+
+On the master host, edit the /etc/ntp.conf file and perform the following tasks:
+
+Comment the following lines
+
+**# server 0.centos.pool.ntp.org iburst**
+
+**# server 1.centos.pool.ntp.org iburst**
+
+**# server 2.centos.pool.ntp.org iburst**
+
+**# server 3.centos.pool.ntp.org iburst**
+
+ 
+
+Add the line server IP address indicated as shown:
+
+**server 172.16.1.11**
+| 2.       | On the master host ( mdw ), modify the ntp.conf file as follows.
+
+ <v:shape id="Picture_x0020_7" o:spid="_x0000_i1504" type="#_x0000_t75" style="width: 463pt; height: 598pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image034.png" o:title=""></v:imagedata></v:shape>
+
+Save your changes and exit.
+| 3.       | Connect to segment 1 host ( sdw1) using ssh from the current terminal window. Use vi to edit the  /etc/ntp.conf file, and modify it as shown below.
+
+<v:shape id="Picture_x0020_8" o:spid="_x0000_i1503" type="#_x0000_t75" style="width: 463pt; height: 598pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image035.png" o:title=""></v:imagedata></v:shape>
+
+Save your changes and exit vi.
+| 4.       | Using gpscp, copy the /etc/ntp.conf file to segment 2, sdw2.
+
+ 
+
+[root@sdw1 ~]# **source /usr/local/greenplum-db/greenplum_path.sh**
+
+[root@sdw1 ~]# **gpscp -h sdw2 /etc/ntp.conf =:/etc/ntp.conf**
+
+<v:shape id="Picture_x0020_1458" o:spid="_x0000_i1502" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1c8809d.PNG" style="width: 458pt; height: 1in; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image036.png" o:title="SNAGHTML1c8809d.PNG"></v:imagedata></v:shape>
+
+Note that there is a space between “ntp.conf” and “=:”
+| 5.       | Connect to the standby master server ( smdw ) using ssh. Edit /etc/ntp.conf using vi, and modify the file as shown on the picture below.
+
+<v:shape id="Picture_x0020_12" o:spid="_x0000_i1501" type="#_x0000_t75" style="width: 463pt; height: 598pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image037.png" o:title=""></v:imagedata></v:shape>
+
+Save your changes and exit vi.
+| 6.       | Exit from the standby master server.
+
+[root@smdw ~]# **exit**
+
+ 
+
+<v:shape id="Picture_x0020_69" o:spid="_x0000_i1500" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5557f29.PNG" style="width: 458pt; height: 54pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image038.png" o:title="SNAGHTML5557f29.PNG"></v:imagedata></v:shape>
+| 7.       | Exit from the sdw1 segment server.
+
+[root@sdw1 ~]# **exit**
+
+<v:shape id="Picture_x0020_71" o:spid="_x0000_i1499" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML555e5a8.PNG" style="width: 458pt; height: 63pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image039.png" o:title="SNAGHTML555e5a8.PNG"></v:imagedata></v:shape>
+| 8.       | Synchronize the system clocks on all Greenplum hosts. This effectively starts or resets the ntpd service on all hosts within the cluster.
+
+[root@mdw Binaries]# **gpssh -f hostfile_exkeys -v -e 'ntpd'**
+
+<v:shape id="Picture_x0020_77" o:spid="_x0000_i1498" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5668429.PNG" style="width: 458pt; height: 192pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image040.png" o:title="SNAGHTML5668429.PNG"></v:imagedata></v:shape>
+| 9.       | Verify the ntpd service is executing on all hosts in the cluster.
+
+[root@mdw Binaries]# **gpssh -f hostfile_exkeys -e 'pgrep ntp'**
+
+<v:shape id="Picture_x0020_78" o:spid="_x0000_i1497" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5781e55.PNG" style="width: 458pt; height: 141pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image041.png" o:title="SNAGHTML5781e55.PNG"></v:imagedata></v:shape>
+| 10.    | Go back to the root directory on the mdw server.
+
+[root@mdw ~]#  **cd**
+
+<v:shape id="Picture_x0020_80" o:spid="_x0000_i1496" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML578a649.PNG" style="width: 458pt; height: 66pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image042.png" o:title="SNAGHTML578a649.PNG"></v:imagedata></v:shape>
+|====
+
+ 
+
+ 
+
+|====
+| **Step** | **Action**
+| 1.       | You will execute several Greenplum Database utilities to verify the operating system settings and hardware performance of the servers within the Greenplum Cluster. These tests should be executed prior to initializing your Greenplum Database system.
+
+If not already connected to the master server, open a new terminal session to mdw and log in as root with the password, Piv0tal.
+| 2.       | Execute the gpcheck command to verify the operating system settings. This command should normally be executed against all hosts in the cluster, but due to the amount of information it provides, we will examine it first for the master server.
+
+[root@mdw ~]# **gpcheck -h mdw**
+
+<v:shape id="Picture_x0020_66" o:spid="_x0000_i1495" type="#_x0000_t75" style="width: 459pt; height: 355pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image043.png" o:title=""></v:imagedata></v:shape>
+
+What is the result of the command?
+
+Are there any configuration issues that need to be fixed?
+
+__________________________________________________________________________________
+| 3.       | There are likely several errors visible for the master server, mdw. The following highlights some of the I/O scheduler and the read ahead errors seen in this environment.
+
+**<v:shape id="Picture_x0020_81" o:spid="_x0000_i1494" type="#_x0000_t75" style="width: 459pt; height: 355pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image044.png" o:title=""></v:imagedata></v:shape>**
+| 4.       | Update I/O scheduler value for sr0 device using the command below.
+
+[root@mdw ~]#** echo deadline > /sys/block/sr0/queue/scheduler**
+
+<v:shape id="Picture_x0020_83" o:spid="_x0000_i1493" type="#_x0000_t75" style="width: 459pt; height: 119pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image045.png" o:title=""></v:imagedata></v:shape>
+| 5.       | Another error identified by running gpcheck -h mdw is highlighted in this window.
+
+<v:shape id="Picture_x0020_82" o:spid="_x0000_i1492" type="#_x0000_t75" style="width: 459pt; height: 355pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image046.png" o:title=""></v:imagedata></v:shape>
+| 6.       | Update readahead value for sda1 device using the command below.
+
+[root@mdw ~]# **/sbin/blockdev --setra 16384 /dev/sdb1**
+
+<v:shape id="Picture_x0020_84" o:spid="_x0000_i1491" type="#_x0000_t75" style="width: 459pt; height: 119pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image047.png" o:title=""></v:imagedata></v:shape>
+| 7.       | Re-execute the gpcheck command to confirm that the errors for the devices sr0 and sdb1 on mdw are no longer present. However some errors still exist on mdw. In addition all of the errors that were present on mdw are also present on smdw, sdw1 and sdw2 and need to be cleared.
+
+[root@mdw ~]#** gpcheck -h mdw**
+
+**<v:shape id="Picture_x0020_86" o:spid="_x0000_i1490" type="#_x0000_t75" style="width: 459pt; height: 269pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image048.png" o:title=""></v:imagedata></v:shape>**
+| 8.       | Execute the script, update_block_devices_IO_scheduler.sh, to update the devices on all hosts.
+
+[root@mdw ~]#**/rawdata/solutions/lab2/update_block_devices_IO_scheduler.sh**
+
+<v:shape id="Picture_x0020_1311" o:spid="_x0000_i1489" type="#_x0000_t75" style="width: 458pt; height: 477pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image049.png" o:title=""></v:imagedata></v:shape>
+
+ 
+
+**Note:** This script is provided within the training environment to quickly update the master, standby, and segment servers. This is not provided by default with the Greenplum Database installation. The script uses gpssh to update the block devices on each system. You must be root to successfully execute the commands within the script.
+| 9.       | Execute the gpcheck command to verify the configuration in all hosts.  Use the/rawdata/Binaries/hostfile_exkeys file to provide the list of all hosts in the cluster.
+
+[root@mdw ~]# **gpcheck -f /rawdata/Binaries/hostfile_exkeys –m mdw \**
+
+**-s smdw**
+
+<v:shape id="Picture_x0020_89" o:spid="_x0000_i1488" type="#_x0000_t75" style="width: 459pt; height: 3in; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image050.png" o:title=""></v:imagedata></v:shape>
+| 10.    | Verify the baseline hardware performance of the segment host systems. The test you are performing will take a few minutes as it performs a stress test of memory, I/O, and network performance.
+
+Using gpssh, execute the three commands below for all Greenplum hosts. These commands will disable the firewall among the Greenplum servers. The commands are:
+
+**1. service iptables save**
+
+**2. service iptables stop**
+
+**3. chkconfig iptables off**
+
+[root@mdw ~]# **cd /rawdata/Binaries  
+**[root@mdw Binaries]# **gpssh –v -f hostfile_exkeys -e 'service iptables save'**
+
+[root@mdw Binaries]# **gpssh –v -f hostfile_exkeys -e 'service iptables stop'**
+
+[root@mdw Binaries]# **gpssh –v -f hostfile_exkeys -e 'chkconfig iptables off'**
+
+**<v:shape id="Picture_x0020_3" o:spid="_x0000_i1487" type="#_x0000_t75" style="width: 458pt; height: 455pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image051.png" o:title=""></v:imagedata></v:shape>**
+|   | **Note: **It is necessary to either disable the firewall or to allow specific ports through the Linux firewall for specific Greenplum services. When testing the servers, the network performance test uses port 23000 by default. If this port is not open on all systems, the test will fail. Greenplum utilities may also occasionally use remote copy (rcp) services to copy files from one system to another.
+| 11.    | Execute the gpcheckperf utility to verify the configuration. This is executed against the segment servers within the cluster. As there are only two segment hosts, we will simply specify the hostnames on the command line. If you do create a file, use the -f option followed by the filename to specify the segment servers to include in the validation tests.
+
+ 
+
+Either of the following commands will work:
+
+[root@mdw Binaries]# **gpcheckperf -h sdw1 -h sdw2 -d /data –D**
+
+**or**
+
+[root@mdw Binaries]# **gpcheckperf -f hostfile_gpssh_only -d /data –D**
+|   | <v:shape id="Picture_x0020_90" o:spid="_x0000_i1486" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5a39a1a.PNG" style="width: 458pt; height: 642pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image052.png" o:title="SNAGHTML5a39a1a.PNG"></v:imagedata></v:shape>
+| 12.    | If you wish to perform a network only test, execute the gpcheckperf command with the -r n option. You will also need to specify a segment directory using the -d option.
+
+What is the total bandwidth for:
+
+·       Disk Writes? _____________________________________________
+
+·       Disk Reads? ______________________________________________
+
+·        Sustainable Memory? ______________________________________
+
+·       Network? _______________________________________________
+
+**Note: **Network performance in the virtual environment may be slightly degraded and so you may see messages that the connection between systems does not meet the guidelines established by Greenplum as adequate for a production environment.
+|   | **Tips and Best Practices**
+
+In a single-host environment, or virtual environment, performance will be lower than on a distributed cluster. On production systems, you should run gpcheckperf when the system is idle to get accurate performance metrics.
+
+**Summary**
+
+As with any database system, the performance of the Greenplum Database is dependent upon the hardware and IT infrastructure on which it is running. The Greenplum Database is comprised of several servers (or hosts) acting together as one cohesive system. The Greenplum Database’s runtime performance will be as fast as the slowest segment host in the array. It is important to know your systems’ expected level of performance before setting database performance expectations.
+
+The Greenplum Database requires that the operating systems of the hosts on which it runs be properly tuned. These tuning parameters are especially important on large systems with complex query workloads, as queries can fail when they do not get the resources they need from the operating system. The gpcheck utility checks the OS environment of each host to ensure that they have the Greenplum recommended settings.
+
+The expected results of the gpcheckperf tests depend on the total capacity of the server hardware you are using. If the expected disk I/O of a system is 2 GBytes per second, multiply the expected rate by the number of segment servers for the total bandwidth. If there are two segment servers, as in this environment, the expected total bandwidth is 4 GB/s.
+
+When looking at the output from gpcheckperf, you want to make sure that your disk I/O rate is what you would expect from your hardware platform and that the memory and network bandwidth are not bottlenecks to optimal performance. (They should be comparable to or greater than disk I/O.)
+|====
+
+ 
+
+End of Lab Exercise  
+
+  

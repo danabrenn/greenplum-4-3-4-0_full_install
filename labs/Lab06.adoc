@@ -1,0 +1,161 @@
+= 6. Database Internals
+
+
+
+|====
+|   
+
+**Purpose:**
+
+ | Each instance in the Greenplum Database, the master and each segment, has a data directory where database files are stored on disk. In this lab, you examine the database files on disk and determine which database objects they correspond to by looking up their OID (object identifier) numbers in the system catalog tables.
+
+You will examine the database server processes running on a Greenplum Database host.
+| 
+| **Tasks:** | Students perform the following tasks:
+
+·       Explore database files on disk
+
+·       Examine server processes
+| 
+| **References:** | Module 3 – Greenplum Database Tools, Utilities, and Internals
+
+·       Lesson: Database Internals
+|====
+
+|====
+| **Step** | **Action**
+| 1.      | You should be logged as gpadmin at MASTER_DATA_DIRECTORY. If you are not at the master data directory cd to it.
+
+[gpadmin@mdw ~]$ **cd $MASTER_DATA_DIRECTORY**
+
+[gpadmin@mdw gpseg-1]$ **ls**
+
+<v:shape id="Picture_x0020_54" o:spid="_x0000_i1379" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML140ad55.PNG" style="width: 459pt; height: 141pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image159.png" o:title="SNAGHTML140ad55.PNG"></v:imagedata></v:shape>
+
+You should see several directories.
+| 2.      | Create a database called names.
+
+[gpadmin@mdw gpseg-1]$ **createdb names**
+
+<v:shape id="Picture_x0020_55" o:spid="_x0000_i1378" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1411b43.PNG" style="width: 459pt; height: 62pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image160.png" o:title="SNAGHTML1411b43.PNG"></v:imagedata></v:shape>
+
+**Note: **The createdb command is a Greenplum utility that is executed from the command line. The equivalent SQL command is
+
+CREATE DATABASE names;
+| 3.      | Change to the base subdirectory. This is where database files are stored. You should see a subdirectory for each database that exists in your Greenplum Database system:
+
+[gpadmin@mdw gpseg-1]$ **cd base**
+
+[gpadmin@mdw base]$ **ls**
+
+<v:shape id="Picture_x0020_56" o:spid="_x0000_i1377" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1434c80.PNG" style="width: 458pt; height: 83pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image161.png" o:title="SNAGHTML1434c80.PNG"></v:imagedata></v:shape>
+
+How many subdirectories are located in the base subdirectory? __________________________
+| 4.      | Find out which database each directory corresponds to by looking up the OID number in the system catalog table, pg_database:
+
+[gpadmin@mdw base]$ **psql -c "SELECT datname, oid FROM pg_database;"**
+
+<v:shape id="Picture_x0020_57" o:spid="_x0000_i1376" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML145cff2.PNG" style="width: 458pt; height: 160pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image162.png" o:title="SNAGHTML145cff2.PNG"></v:imagedata></v:shape>**  
+Note: **Your output may differ from the screenshot shown here.
+
+Record the OID of the names database in the space provided.______________________________________
+| 5.      | Using the SQL statement provided, create a schema and tables in the names database:
+
+[gpadmin@mdw base]$ **psql -d names**
+
+names=# **CREATE SCHEMA baby;**  
+
+names=# **CREATE TABLE baby.names (id int PRIMARY KEY,name varchar(30), origin varchar(30), meaning text);**
+
+names=# **CREATE TABLE baby.rank (id int, rank int, year int, gender char(1), count int )  DISTRIBUTED BY (id, gender, year);**
+
+
+
+names=# **\q**
+
+<v:shape id="Picture_x0020_58" o:spid="_x0000_i1375" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML147323d.PNG" style="width: 458pt; height: 199pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image163.png" o:title="SNAGHTML147323d.PNG"></v:imagedata></v:shape>
+
+You will examine the syntax in greater detail in upcoming lessons and labs.
+| 6.      | Change to the names** **database directory on disk and examine the files in that subdirectory. You must know the OID of the names database.
+
+There are several files, identified by OID, that correspond to database objects. View the contents of the names database represented by its OID with the following commands:
+
+[gpadmin@mdw base]$ **cd <oid_of_names_db>  
+**[gpadmin@mdw base]$ **ls**
+
+
+
+In this example, we use the OID for the names database obtained earlier in the lab.
+
+[gpadmin@mdw base]$ **cd 35957**
+
+[gpadmin@mdw 35957]$ **pwd**
+
+[gpadmin@mdw 35957]$ **ls**
+
+<v:shape id="Picture_x0020_59" o:spid="_x0000_i1374" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15cee6a.PNG" style="width: 458pt; height: 287pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image164.png" o:title="SNAGHTML15cee6a.PNG"></v:imagedata></v:shape>
+| 7.      | Discover which OID file corresponds to the rank table by looking it up in the pg_class table:
+
+[gpadmin@mdw 35957]$ **psql names -c "SELECT oid FROM pg_class WHERE relname='rank';"**
+
+<v:shape id="Picture_x0020_60" o:spid="_x0000_i1373" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML15f3f47.PNG" style="width: 458pt; height: 122pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image165.png" o:title="SNAGHTML15f3f47.PNG"></v:imagedata></v:shape>
+
+Which OID corresponds to the rank table? _______________________________________
+|  | **Summary**
+
+Each master and segment instance in the Greenplum Database has a data directory where database files are stored on disk. Each database object on disk can be identified by looking up its OID in the system catalog tables. Database objects in the Greenplum Database are distributed across the segment instances. The OIDs are consistent across all instances in the array.
+|====
+
+
+
+
+
+
+
+|====
+| **Step** | **Action**
+| 1.      | You should be logged in to the master server, mdw, as gpadmin**.** Change to the  $MASTER_DATA_DIRECTORYdirectory. Find all of the postgres processes running on the system:
+
+[gpadmin@mdw 35957]$ **cd $MASTER_DATA_DIRECTORY**
+
+[gpadmin@mdw gpseg-1]$ **ps ax | grep postgres**
+
+<v:shape id="Picture_x0020_61" o:spid="_x0000_i1372" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML19fa77d.PNG" style="width: 458pt; height: 359pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image166.png" o:title="SNAGHTML19fa77d.PNG"></v:imagedata></v:shape>
+
+How many are there? _____________________________________________
+
+Can you identify the database listener process, also known as the postmaster?
+| 2.      | Connect directly to a segment instance using psql and a segment instance port: 
+
+[gpadmin@mdw gpseg-1]$ **psql names -p 50001**
+
+<v:shape id="Picture_x0020_1437" o:spid="_x0000_i1371" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1a0a9be.PNG" style="width: 458pt; height: 92pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image167.png" o:title="SNAGHTML1a0a9be.PNG"></v:imagedata></v:shape>
+
+What happened? ___________________________________________________
+| 3.     
+
+ | Using the gpconfig command, view the defined ports for the database by examining the **port** parameter.
+
+[gpadmin@mdw gpseg-1]$ **gpconfig -s port**
+
+<v:shape id="Picture_x0020_1442" o:spid="_x0000_i1370" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f37fa4.PNG" style="width: 459pt; height: 100pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image168.png" o:title="SNAGHTML1f37fa4.PNG"></v:imagedata></v:shape>
+| 4.      | Attempt to connect to the one of the segment ports listed in the previous step.
+
+[gpadmin@mdw gpseg-1]$ **psql names -p 40000**
+
+<v:shape id="Picture_x0020_1448" o:spid="_x0000_i1369" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML1f6830e.PNG" style="width: 458pt; height: 92pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image169.png" o:title="SNAGHTML1f6830e.PNG"></v:imagedata></v:shape>
+
+Where you able to connect? Why or why not?
+
+_________________________________________________________________________________
+|  | **Summary**
+
+The postgres database server process, known as the postmaster in prior releases accepts client connections. In the Greenplum Database, only the postgres listener process of the master instance can accept user client connections. The segments only allow connections from the master. The database listener process has several sub postgres processes running at any given time. Sub postgres processes are spawned as needed to handle client requests. In the Greenplum Database, the ps output for a postgres client process will have similar information as found in the Greenplum Database server logs:
+
+postgres: <user><database><host><con#><seg#><cmd#><slice#|status>
+|====
+
+
+
+End of Lab Exercise
+

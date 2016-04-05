@@ -1,0 +1,250 @@
+= 7. Data Definition Language
+
+
+
+|====
+|   
+
+**Purpose:**
+
+ | In this lab, you will learn how to manage databases and schemas in the Greenplum Database. You will create a database called faa and a schema calledfaadata. You will also set the schema search path and learn how to verify which schema you are in.
+
+You will also create some tables in the Greenplum Database and learn how the Greenplum distribution key for a table is chosen.
+| 
+| **Tasks:** | Students perform the following tasks:
+
+·       Create databases and schemas
+
+·       Create tables
+
+·       View indexes and schemas
+| 
+| **References****:** | Module 4 – Defining and Securing the User Database
+
+·       Lesson: Data Definition Language
+|====
+
+|====
+| **Step** | **Action**
+| 1.      | Log in as gpadmin, create a new database called faa using the createdb Greenplum client:****
+
+[gpadmin@mdw ~]$ **createdb faa**
+
+<v:shape id="Picture_x0020_16" o:spid="_x0000_i1368" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5ed07fa.PNG" style="width: 458pt; height: 63pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image170.png" o:title="SNAGHTML5ed07fa.PNG"></v:imagedata></v:shape>
+| 2.      | Set the faa database to be the default database you connect to when you start a psql session without specifying the database name:
+
+[gpadmin@mdw ~]$ **export PGDATABASE=faa**
+
+<v:shape id="Picture_x0020_1395" o:spid="_x0000_i1367" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5ed7d68.PNG" style="width: 458pt; height: 65pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image171.png" o:title="SNAGHTML5ed7d68.PNG"></v:imagedata></v:shape>
+| 3.      | Verify that the **PGDATABASE** environment variable is set correctly:
+
+[gpadmin@mdw ~]$ **echo $PGDATABASE******
+
+It should now be set to faa.<v:shape id="Picture_x0020_1404" o:spid="_x0000_i1366" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5ef04df.PNG" style="width: 458pt; height: 71pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image172.png" o:title="SNAGHTML5ef04df.PNG"></v:imagedata></v:shape>
+| 4.      | Start a psql session and connect to the faa database. If the PGDATABASE environment variable is set correctly, you do not need to supply the database name:
+
+[gpadmin@mdw ~]$ **psql**
+
+<v:shape id="Picture_x0020_39" o:spid="_x0000_i1365" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5ef5fe9.PNG" style="width: 458pt; height: 90pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image173.png" o:title="SNAGHTML5ef5fe9.PNG"></v:imagedata></v:shape>
+| 5.      | At the psql prompt, list all the databases in the system with the **\l** meta-command.
+
+faa=# **\l**
+
+<v:shape id="Picture_x0020_43" o:spid="_x0000_i1364" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5efdd04.PNG" style="width: 458pt; height: 207pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image174.png" o:title="SNAGHTML5efdd04.PNG"></v:imagedata></v:shape>
+
+Which ones do you see? Is the faa database there? ____________________________________
+| 6.      | At the psql prompt, create a schema named faadata** **using the CREATE SCHEMA SQL command:
+
+faa=# **create schema faadata;**
+
+<v:shape id="Picture_x0020_49" o:spid="_x0000_i1363" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5f1b2aa.PNG" style="width: 458pt; height: 71pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image175.png" o:title="SNAGHTML5f1b2aa.PNG"></v:imagedata></v:shape>
+| 7.      | Change the search path on the database**, **faa** **so that the new faadata schema is the default schema:****
+
+faa=# **ALTER DATABASE faa SET search_path TO faadata, public, pg_catalog;**
+
+<v:shape id="Picture_x0020_62" o:spid="_x0000_i1362" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5f24e8b.PNG" style="width: 458pt; height: 83pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image176.png" o:title="SNAGHTML5f24e8b.PNG"></v:imagedata></v:shape>****
+| 8.      | The change to the search path will not become visible until the next client connection. Use the \c meta-command to reconnect to the faa database:
+
+faa=# **\c faa**
+
+<v:shape id="Picture_x0020_63" o:spid="_x0000_i1361" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5f2a39d.PNG" style="width: 458pt; height: 69pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image177.png" o:title="SNAGHTML5f2a39d.PNG"></v:imagedata></v:shape>****
+| 9.      | Run the current_schema() function to verify that you are indeed in the faadata schema:
+
+faa=# **SELECT current_schema();**
+
+<v:shape id="Picture_x0020_1435" o:spid="_x0000_i1360" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5f316f8.PNG" style="width: 458pt; height: 110pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image178.png" o:title="SNAGHTML5f316f8.PNG"></v:imagedata></v:shape>
+| 10.   | Examine the value of the search_path configuration parameter to verify it is correct:
+
+faa=# **SHOW search_path;****  
+
+**
+
+<v:shape id="Picture_x0020_1438" o:spid="_x0000_i1359" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5f37849.PNG" style="width: 458pt; height: 110pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image179.png" o:title="SNAGHTML5f37849.PNG"></v:imagedata></v:shape>
+| 11.   | Use the \dn meta-command to list the schemas in the database:
+
+faa=# **\dn**
+
+<v:shape id="Picture_x0020_1449" o:spid="_x0000_i1358" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5f3e37a.PNG" style="width: 458pt; height: 188pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image180.png" o:title="SNAGHTML5f3e37a.PNG"></v:imagedata></v:shape>
+
+Which ones do you see? ______________________________________________
+
+Which ones are for system-level objects and which ones are for user-created objects?  
+________________________________________________________________
+
+
+|  | **Summary**
+
+You can create or drop databases using the CREATE DATABASE or DROP DATABASE commands or the createdb or dropdb client programs respectively.
+
+By default, every newly created database has a schema named public, which is where objects are created by default.
+
+If you create your own schemas and do not want to use qualified names all the time, you should set thesearch_path parameter to ensure your schema is first in the search path. You can use the ALTER DATABASE command to set the schema search path for the database.
+
+You can also use the ALTER ROLE command to set the schema search path for a particular role.
+|====
+**  
+**
+
+
+
+|====
+| **Step** | **Action**
+| 1.      | You will create tables in the faa Greenplum database and learn how the Greenplum distribution key for a table is chosen.
+
+For the purpose of this lab exercises, the faa database will have two tables:
+
+·       The test_table table will act as a fact data.
+
+·       The test_table2 table will act as a dimension table.
+
+At the psql prompt, create a new table with the following definition:
+
+faa=# **CREATE TABLE test_table (**
+
+   **id int PRIMARY KEY,**
+
+   **name varchar(30) NOT NULL,**
+
+   **origin varchar(30) NOT NULL,**
+
+   **meaning text**
+
+**);**
+
+<v:shape id="Picture_x0020_1453" o:spid="_x0000_i1357" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5f54ac4.PNG" style="width: 458pt; height: 140pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image181.png" o:title="SNAGHTML5f54ac4.PNG"></v:imagedata></v:shape>****
+
+Note that the table has a PRIMARY KEY and there is no explicit DISTRIBUTED BY clause given. The primary key is automatically chosen as the distribution key in this case.
+| 2.      | Create a table with the following definition and explicitly declare a distribution key using a DISTRIBUTED BYclause:****
+
+faa=# **CREATE TABLE test_table2 (**
+
+   **id int,**
+
+   **rank int,**
+
+   **year int,**
+
+   **count int)**
+
+**DISTRIBUTED BY (id, year);**
+
+<v:shape id="Picture_x0020_1457" o:spid="_x0000_i1356" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5f5b78a.PNG" style="width: 458pt; height: 119pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image182.png" o:title="SNAGHTML5f5b78a.PNG"></v:imagedata></v:shape>****
+| 3.      | Why is this distribution key a good choice for this table?  
+_____________________________________________________
+
+What would be the distribution key if you left out the DISTRIBUTED BY clause?  
+_____________________________________________________
+
+Would that be a good distribution key for this table? Is that a unique key?  
+_____________________________________________________
+| 4.      | Use the \dt meta-command to list the tables in the database:
+
+faa=# **\dt**
+
+<v:shape id="Picture_x0020_1459" o:spid="_x0000_i1355" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5f61a42.PNG" style="width: 458pt; height: 129pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image183.png" o:title="SNAGHTML5f61a42.PNG"></v:imagedata></v:shape>****
+
+Which ones do you see? Are the test_table and test_table2 tables there?
+| 5.      | Exit psql:
+
+faa=# **\q**
+|  | **Summary**
+
+When creating the table, there is an additional clause to declare the Greenplum distribution key column(s).
+
+If a DISTRIBUTED BY clause is not supplied, then either the PRIMARY KEY, if the table has one, or the first column of the table will be used. This may or may not be the desirable distribution key.
+
+To ensure an even distribution of data, choose a distribution key that is unique for each record. If that is not possible, the column(s) with the lowest selectivity can also be chosen. If a good choice of distribution columns is not available, choose DISTRIBUTED RANDOMLY as the distribution key.
+|====
+
+
+
+****
+
+
+
+|====
+| **Step** | **Action**
+| 1.      | Start a psql session:
+
+[gpadmin@mdw ~]$ **psql**
+
+Verify you are in the faa database. If not, issue the following meta-command: **\c **faa.****
+| 2.      | At the psql prompt, create a new view on the test tables:
+
+faa=# **CREATE VIEW test_view AS**
+
+   **SELECT test_table.id**
+
+   **FROM test_table, test_table2**
+
+   **WHERE test_table.id < 11 AND test_table.id = test_table2.id;**
+
+<v:shape id="Picture_x0020_1460" o:spid="_x0000_i1354" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5f7ddb0.PNG" style="width: 458pt; height: 101pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image184.png" o:title="SNAGHTML5f7ddb0.PNG"></v:imagedata></v:shape>****
+| 3.      | Confirm the view definition is correct:
+
+faa=# **\d+ test_view**
+
+<v:shape id="Picture_x0020_1461" o:spid="_x0000_i1353" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5f840d5.PNG" style="width: 458pt; height: 152pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image185.png" o:title="SNAGHTML5f840d5.PNG"></v:imagedata></v:shape>
+| 4.      | Create an index on the id column of the test_table2 table:
+
+faa=# **CREATE INDEX test_index ON test_table2 (id);**
+
+****
+
+<v:shape id="Picture_x0020_1463" o:spid="_x0000_i1352" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5f8a967.PNG" style="width: 458pt; height: 69pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image186.png" o:title="SNAGHTML5f8a967.PNG"></v:imagedata></v:shape>****
+| 5.      | Confirm the index was created:
+
+faa=#  **\di**  
+
+****
+
+<v:shape id="Picture_x0020_1464" o:spid="_x0000_i1351" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5f8f767.PNG" style="width: 458pt; height: 131pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image187.png" o:title="SNAGHTML5f8f767.PNG"></v:imagedata></v:shape>
+| 6.      | Create a sequence table that you can use to assign unique ids when inserting new records into thetest_table table. The id value in the test_table table is currently 1, so the sequence starts at 1:
+
+faa=#  **CREATE SEQUENCE test_table_seq START 1;**
+
+****
+
+<v:shape id="Picture_x0020_1465" o:spid="_x0000_i1350" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5f993e4.PNG" style="width: 458pt; height: 70pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image188.png" o:title="SNAGHTML5f993e4.PNG"></v:imagedata></v:shape>****
+| 7.      | Examine the sequence table you just created:  
+faa=#** **** SELECT * FROM test_table_seq;**
+
+
+
+<v:shape id="Picture_x0020_1466" o:spid="_x0000_i1349" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTML5f9f297.PNG" style="width: 458pt; height: 140pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image189.png" o:title="SNAGHTML5f9f297.PNG"></v:imagedata></v:shape>
+| 8.      | Exit psql:  
+faa=# **\q**
+|  | **Summary**
+
+Views allow you to store frequently used queries and then access them in SELECT statements as if they were a regular table. You created a view that selects the top ten baby names from your database.
+
+Indexes are not always the performance enhancer in the Greenplum Database as they are in traditional database management systems. In some cases indexes can improve query performance, and in some cases indexes have no effect or can slightly degrade performance. You have added an index on the rank table id column, since that column will be used often in your queries to join with the names table. When you get to query profiling, you will determine if this index is indeed being utilized.
+
+Sequences are used to generate numbers, helpful for incrementing unique id columns such as the id column of your names table. You can use the sequence when you insert new names into this table to generate a unique id number that won’t conflict with the other id numbers already being used.
+|====
+
+
+
+End of Lab Exercise
+
+****

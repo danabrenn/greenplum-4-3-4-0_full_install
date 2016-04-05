@@ -1,0 +1,232 @@
+= 9. Roles, Privileges, and Resources
+
+
+
+|====
+|   
+
+**Purpose:**
+
+ | In this lab you will learn how to create roles that are users and roles that are groups.
+
+User-level roles can log in to a database. Group-level roles are useful for managing permissions and access privileges to database objects.
+
+You will learn how to grant privileges on database objects to a group-level role. Members, or user-level roles, of the group inherit those access privileges.
+
+You will create a resource queue and assign a user role to this resource queue. The user name you use is the name you added in the pg_hba.conf file, your first name. For testing purposes, the resource queue you create will have an ACTIVE THRESHOLD of 1, meaning that only one active statement submitted through the resource queue will be allowed to run at any given time.
+| 
+| **Tasks:** | Students perform the following tasks:
+
+·       Manage user and group roles
+
+·       Manage resource queues
+| 
+| **References:** | Module 4 – Defining and Securing the User Database
+
+·       Lesson: Roles, Privileges, and Resources
+|====
+
+
+|====
+| **Step** | **Action**
+| 1.      | Start a psql session:  
+[gpadmin@mdw ~]$** psql**
+
+If you are not in the faa database, issue the following meta-command to connect to the database: **\c faa**.
+| 2.      | Create a role named admin and give it appropriate permission attributes for an administrator group-level role using the following command
+
+faa=# **CREATE ROLE admin WITH CREATEDB CREATEROLE;**
+
+<v:shape id="Picture_x0020_169" o:spid="_x0000_i1329" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbc15e23.PNG" style="width: 458pt; height: 92pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image209.png" o:title="SNAGHTMLbc15e23.PNG"></v:imagedata></v:shape>
+| 3.      | Create a user login role for yourself and give it appropriate permission attributes:  
+faa=#  **CREATE ROLE <your_name> WITH LOGIN;**
+
+Replace **<your_name>** with the name you used in Lab 5: Greenplum Database Server Configuration.
+
+
+
+<v:shape id="Picture_x0020_170" o:spid="_x0000_i1328" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbc207ca.PNG" style="width: 458pt; height: 87pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image210.png" o:title="SNAGHTMLbc207ca.PNG"></v:imagedata></v:shape>
+| 4.      | Add the user role you just created as a member of the admin role using the GRANT command:  
+faa=#  **GRANT admin TO <your_name>;**
+
+<v:shape id="Picture_x0020_171" o:spid="_x0000_i1327" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbc25eb0.PNG" style="width: 458pt; height: 71pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image211.png" o:title="SNAGHTMLbc25eb0.PNG"></v:imagedata></v:shape>
+| 5.      | Confirm that your roles are configured as expected by using the \du meta-command in psql:  
+faa=#** \du**
+
+This shows a list of all roles in the system.
+
+<v:shape id="Picture_x0020_173" o:spid="_x0000_i1326" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbc2abc6.PNG" style="width: 458pt; height: 137pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image212.png" o:title="SNAGHTMLbc2abc6.PNG"></v:imagedata></v:shape>
+| 6.      | Change to the user role you just created using the SET ROLE command:  
+faa=# **SET ROLE TO <your_name>;**
+
+<v:shape id="Picture_x0020_175" o:spid="_x0000_i1325" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbc2fe0a.PNG" style="width: 458pt; height: 70pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image213.png" o:title="SNAGHTMLbc2fe0a.PNG"></v:imagedata></v:shape>
+
+Note that your prompt has changed to reflect the level of the user you have connected into the database with.
+| 7.      | Run a query as this role. Select all columns from the test_table table:  
+faa=>** SELECT * from test_table;**
+
+<v:shape id="Picture_x0020_181" o:spid="_x0000_i1324" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbc37a5a.PNG" style="width: 458pt; height: 92pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image214.png" o:title="SNAGHTMLbc37a5a.PNG"></v:imagedata></v:shape>
+
+The command did not succeed. Why not? ___________________________________________
+| 8.      | Exit psql:  
+faa=> **\q**
+| 9.      | Set the PGDATABASE variable to faa.
+
+[gpadmin@mdw ~]$ **export PGDATABASE=faa**
+| 10.   | Log in to the database as **gpadmin**.
+
+[gpadmin@mdw ~]$ **psql**
+
+<v:shape id="Picture_x0020_224" o:spid="_x0000_i1323" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbc4815c.PNG" style="width: 458pt; height: 101pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image215.png" o:title="SNAGHTMLbc4815c.PNG"></v:imagedata></v:shape>
+| 11.   | Grant privileges to the faa database, faadata schema, and test_table and test_table2tables to the admin role. Grant all privileges on the faa database:  
+
+
+
+faa=# **GRANT ALL ON DATABASE faa TO admin WITH GRANT OPTION;**
+
+<v:shape id="Picture_x0020_228" o:spid="_x0000_i1322" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbc50589.PNG" style="width: 458pt; height: 1in; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image216.png" o:title="SNAGHTMLbc50589.PNG"></v:imagedata></v:shape>
+| 12.   | Grant all privileges on the schema, faadata using the GRANT OPTION clause:
+
+faa=# **GRANT ALL ON SCHEMA faadata TO admin WITH GRANT OPTION;**
+
+<v:shape id="Picture_x0020_231" o:spid="_x0000_i1321" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbc56b3e.PNG" style="width: 458pt; height: 68pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image217.png" o:title="SNAGHTMLbc56b3e.PNG"></v:imagedata></v:shape>
+| 13.   | Grant all privileges to admin on the tables, test_table and test_table2 with the GRANT OPTION clause:
+
+faa=# **GRANT ALL ON TABLE test_table, test_table2 TO admin WITH GRANT OPTION;**
+
+<v:shape id="Picture_x0020_232" o:spid="_x0000_i1320" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbc5c426.PNG" style="width: 458pt; height: 82pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image218.png" o:title="SNAGHTMLbc5c426.PNG"></v:imagedata></v:shape>
+| 14.   | Exit psql:
+
+faa=#  **\q**
+| 15.   | Start a psql session as the user role you created earlier and connect to the faa database:
+
+[gpadmin@mdw ~]$** psql -U student faa**
+
+<v:shape id="Picture_x0020_233" o:spid="_x0000_i1319" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbc636d6.PNG" style="width: 458pt; height: 90pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image219.png" o:title="SNAGHTMLbc636d6.PNG"></v:imagedata></v:shape>
+| 16.   | Run the SELECT query you ran earlier to test access to the tables. You should now have permissions to see this view (and its schema):
+
+faa=> **SELECT * from test_table;**
+
+<v:shape id="Picture_x0020_235" o:spid="_x0000_i1318" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbc696c0.PNG" style="width: 458pt; height: 101pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image220.png" o:title="SNAGHTMLbc696c0.PNG"></v:imagedata></v:shape>
+| 17.   | Exit psql:
+
+faa=> **\q**
+|  | **Summary**
+
+Greenplum manages database access permissions using the concept of roles. The concept of roles subsumes the concepts of users and groups. A role can be a database user, a group, or both. Roles can own database objects (for example, tables) and can assign privileges on those objects to other roles to control access to the objects. Roles can be members of other roles, thus a member role can inherit the attributes and privileges of its parent role.
+
+Note that if you are using table inheritance and partitioning, table privileges are not passed down from parent tables to child tables. You must explicitly set privileges on each child table. If you use the Greenplum management utilities to partition a table, the utility takes care of passing down the table permissions for you.
+
+When you create a new login role, you must be sure that the pg_hba.conf configuration file of the master allows the role to connect to the Greenplum Database. Otherwise the role will be denied access.
+|====
+
+
+**  
+**
+
+
+
+|====
+| **Step** | **Action**
+| 1.      | At the psql prompt, create a resource queue named adhoc and give it an ACTIVE THRESHOLD limit of 1.
+
+Connect to the faa database as gpadmin:
+
+[gpadmin@mdw ~]$** psql**
+| 2.      | Create the resource queue, adhoc, with ACTIVE THRESHOLD equal to 1:
+
+faa=# **CREATE RESOURCE QUEUE adhoc ACTIVE THRESHOLD 1;**
+
+<v:shape id="Picture_x0020_236" o:spid="_x0000_i1317" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbc9c6b5.PNG" style="width: 458pt; height: 68pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image221.png" o:title="SNAGHTMLbc9c6b5.PNG"></v:imagedata></v:shape>
+| 3.      | Confirm the resource queue was created correctly by checking the pg_resqueue system table:
+
+faa=# **SELECT * from pg_resqueue;  
+
+**
+
+<v:shape id="Picture_x0020_237" o:spid="_x0000_i1316" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbca3f9c.PNG" style="width: 458pt; height: 156pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image222.png" o:title="SNAGHTMLbca3f9c.PNG"></v:imagedata></v:shape>
+
+Note: The pg_default resource queue is the default queue to which all roles are assigned if the resource queue is not specified when the role is created.
+| 4.      | Assign the <your_name> user-level role that you created to the adhoc resource queue:
+
+faa=# **ALTER ROLE <your_name> RESOURCE QUEUE adhoc;**
+
+<v:shape id="Picture_x0020_239" o:spid="_x0000_i1315" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbcb3cfd.PNG" style="width: 458pt; height: 69pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image223.png" o:title="SNAGHTMLbcb3cfd.PNG"></v:imagedata></v:shape>
+| 5.      | Confirm that the role was assigned the adhoc resource queue by querying the pg_resqueue andpg_roles system tables:
+
+faa=# **SELECT rolname, rsqname FROM pg_roles AS r, pg_resqueue AS q WHERE r.rolresqueue=q.oid;**
+
+<v:shape id="Picture_x0020_240" o:spid="_x0000_i1314" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbcbdd51.PNG" style="width: 458pt; height: 147pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image224.png" o:title="SNAGHTMLbcbdd51.PNG"></v:imagedata></v:shape>
+| 6.      | Exit the psql session:
+
+faa=# **\q**
+| 7.      | Start a new psql session as the <your_name> user-level role:  
+
+
+
+[gpadmin@mdw ~]$ **psql -U student**
+
+<v:shape id="Picture_x0020_241" o:spid="_x0000_i1313" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbcc6564.PNG" style="width: 458pt; height: 90pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image225.png" o:title="SNAGHTMLbcc6564.PNG"></v:imagedata></v:shape>
+| 8.      | Verify that the resource queue is working.
+
+To hold a query open, open a cursor within a transaction. This action holds the one active query slot you are allowed in the adhoc resource queue. The cursor will remain open until the transaction is closed, which will give you the time required to test the resource queue’s limits:
+
+faa=> **BEGIN;**  
+faa=>** DECLARE rqtest CURSOR FOR SELECT * FROM test_table;**
+
+<v:shape id="Picture_x0020_243" o:spid="_x0000_i1312" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbccfa62.PNG" style="width: 458pt; height: 128pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image226.png" o:title="SNAGHTMLbccfa62.PNG"></v:imagedata></v:shape>
+| 9.      | Leave the current session open, and open a new terminal session to the master server. Connect as rootand switch to the gpadmin user.
+
+To test the resource queue, you must run a query in another session to see if it is allowed to run while the other session is holding open the resource queue’s active query slot.
+
+From the second terminal window:
+
+Switch users to gpadmin:  
+ **su – gpadmin**
+
+<v:shape id="Picture_x0020_245" o:spid="_x0000_i1311" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbce4f74.PNG" style="width: 458pt; height: 64pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image227.png" o:title="SNAGHTMLbce4f74.PNG"></v:imagedata></v:shape>
+| 10.   | Log in to psql with <your_name>:
+
+[gpadmin@mdw ~]$ psql -U student faa
+
+<v:shape id="Picture_x0020_246" o:spid="_x0000_i1310" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbcf81d9.PNG" style="width: 458pt; height: 88pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image228.png" o:title="SNAGHTMLbcf81d9.PNG"></v:imagedata></v:shape>
+| 11.   | Run a query in the second terminal session:
+
+faa=> **SELECT * FROM test_table2;**
+
+<v:shape id="Picture_x0020_247" o:spid="_x0000_i1309" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbd24843.PNG" style="width: 458pt; height: 61pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image229.png" o:title="SNAGHTMLbd24843.PNG"></v:imagedata></v:shape>
+
+Did the query run? What happened?
+| 12.   | Check the resource queue status:
+
+Open a third terminal session. Log in as **gpadmin.**
+| 13.   | Connect to the faa database as gpadmin. Issue the following command to view the state of the resource queues:
+
+ faa=# **SELECT * FROM pg_resqueue_status;**
+
+<v:shape id="Picture_x0020_248" o:spid="_x0000_i1308" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbd394cd.PNG" style="width: 458pt; height: 198pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image230.png" o:title="SNAGHTMLbd394cd.PNG"></v:imagedata></v:shape>
+
+The **rsqwaiters** column shows the number of statements waiting in a queue. The **rsqholders**column shows the number of queries currently running in a queue.
+| 14.   | Leaving the second terminal session open, return to the first terminal session, the one with the open cursor, and end the transaction:  
+faa=> **END;**
+
+<v:shape id="Picture_x0020_249" o:spid="_x0000_i1307" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbd53cfd.PNG" style="width: 458pt; height: 149pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image231.png" o:title="SNAGHTMLbd53cfd.PNG"></v:imagedata></v:shape>
+| 15.   | Examine the second terminal session. The waiting query should have executed immediately after the transaction in the first session was closed.
+
+Exit psql in all three windows. Close all terminal sessions.
+
+
+
+<v:shape id="Picture_x0020_251" o:spid="_x0000_i1306" type="#_x0000_t75" alt="Description: C:\Users\cantot\AppData\Local\Temp\SNAGHTMLbd5ac05.PNG" style="width: 458pt; height: 102pt; visibility: visible;"><v:imagedata src="MR-1CN-GRNADM_Lab%20Guide_files/image232.png" o:title="SNAGHTMLbd5ac05.PNG"></v:imagedata></v:shape>
+| 16.   | **Summary**
+
+Administrators can create resource queues for the various types of workloads in their organization. The administrator would then set limits on the resource queue based on his/her estimate of how resource intensive the queries associated with that workload are likely to be.
+
+Database roles (users) are then assigned to the appropriate resource queue. A resource queue can support multiple roles.
+|====
+
+
+
+End of Lab Exercise
+
+  
